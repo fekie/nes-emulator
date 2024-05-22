@@ -1,8 +1,7 @@
 //! System info:
-use lazy_static::lazy_static;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
-use spin_sleep::{SpinSleeper, SpinStrategy};
+use std::rc::Rc;
 use std::thread::{self, spawn};
 use std::time::{Duration, Instant};
 
@@ -19,24 +18,13 @@ const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
 
 const TARGET_FPS: usize = 60;
 
+mod cpu;
+mod ppu;
+
 #[derive(Default, Debug)]
 enum Keycode {
     #[default]
     Placeholder,
-}
-
-#[derive(Debug)]
-struct ProcessorStatus(u8);
-
-#[derive(Debug)]
-struct Emulator {
-    accumulator_register: u8,
-    x_register: u8,
-    y_register: u8,
-    stack_pointer: u8,
-    program_counter: u16,
-    registers: [u8; 6],
-    processor_status: ProcessorStatus,
 }
 
 #[derive(Debug)]
