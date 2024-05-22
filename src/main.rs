@@ -68,8 +68,8 @@ fn main() {
     while window.is_open() && !window.is_key_down(Key::Escape) {
         for i in buffer.iter_mut() {
             *i = v; // write something more funny here!
-            v += 1;
-            v = v + v.ilog10()
+            v += 5;
+            v = v + v.ilog(2)
         }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
