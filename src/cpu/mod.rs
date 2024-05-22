@@ -47,5 +47,21 @@ pub struct WorkRAM([u8; 0x800]);
 /// | *$6000-$7FFF  | $2000  | Usually cartridge RAM, when present.                                     |   |   |
 /// | *$8000-$FFFF  | $8000  | Usually cartridge ROM and mapper registers.                              |   |   |
 pub struct CpuMemoryMapper {
+    work_ram: WorkRAM,
     ppu: Rc<RefCell<PPU>>,
+}
+
+impl CpuMemoryMapper {
+    /// Reads the value turned from the address.
+    fn read(&self, address: u16) -> u8 {
+        match address {
+            // Handle the work RAM and the mirrors.
+            0x0000..=0x1FFF => self.work_ram.0[address as usize % 0x0800],
+            // Handle PPU registers and the mirrors.
+            0x2000..=0x3FFF => self.ppu.borrow().registers[((address - 0x2000) % 8) as usize],
+            0x4000..=0x4017 => unimplemented!(),
+
+            _ => unimplemented!(),
+        }
+    }
 }
