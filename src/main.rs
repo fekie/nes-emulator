@@ -16,13 +16,10 @@ const SCREEN_HEIGHT: usize = HEIGHT * 4;
 const CORE_CLOCK_HZ: u64 = 21_441_960;
 const CLOCK_DIVISOR: u64 = 12;
 const CPU_HZ: u64 = CORE_CLOCK_HZ / CLOCK_DIVISOR;
-const CPU_LOOP_PERIOD_SECS: f64 = 1.0 / CORE_CLOCK_HZ as f64;
+const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
+const MACHINE_CYCLES_PER_FRAME: u64 = (CPU_HZ as f64 * FRAME_INTERVAL_SECS) as u64;
 
 const TARGET_FPS: usize = 60;
-
-lazy_static! {
-    static ref FRAME_INTERVAL: Duration = Duration::from_secs_f64(1.0 / TARGET_FPS as f64);
-}
 
 #[derive(Default, Debug)]
 enum Keycode {
@@ -31,20 +28,29 @@ enum Keycode {
 }
 
 #[derive(Debug)]
-struct FrameFinished {
+struct FrameFinishedSignal {
     /// The key that was pressed down just after the newly created frame.
     current_keycode: Keycode,
 }
 
 fn main() {
-    let (tx, rx) = channel::<FrameFinished>();
+    let (tx, rx) = channel::<FrameFinishedSignal>();
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
         let mut cycle_debt = 0;
         let mut last_instruction: Option<u8> = None;
 
-        while let Ok(f) = rx.recv() {}
+        //let mut frames = 0;
+        //let mut frame_60_time = Instant::now();
+
+        while let Ok(_frame_finished_signal) = rx.recv() {
+            /* frames += 1;
+            if frames % 60 == 0 {
+                dbg!(frame_60_time.elapsed());
+                frame_60_time = Instant::now();
+            } */
+        }
     });
 
     // Rendering
@@ -68,14 +74,13 @@ fn main() {
     while window.is_open() && !window.is_key_down(Key::Escape) {
         for i in buffer.iter_mut() {
             *i = v; // write something more funny here!
-            v += 5;
-            v = v + v.ilog(2)
+            v += 1;
         }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
 
-        tx.send(FrameFinished {
+        tx.send(FrameFinishedSignal {
             current_keycode: Keycode::Placeholder,
         })
         .unwrap()
