@@ -52,24 +52,27 @@ fn main() {
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
-        let mut cycle_debt = 0;
-        let mut last_instruction: Option<u8> = None;
+        // If we execute an instruction and it takes more cycles than we have available,
+        // then we store the amount here (as a negative number) that we need to take off.
+        let mut cycle_debt: i64 = 0;
 
-        let mut frames = 0;
-        let mut frame_60_time = Instant::now();
-        let mut combined = 0.0;
-
-        while let Ok(_frame_finished_signal) = rx.recv() {
-            combined += _frame_finished_signal.delay_debt_s;
-            frames += 1;
-            if frames % (60) == 0 {
-                dbg!(frame_60_time.elapsed() - Duration::from_secs_f64(combined));
-
-                combined = 0.0;
-                frame_60_time = Instant::now();
-            }
-
+        while let Ok(frame_finished_signal) = rx.recv() {
             // Do cycles for (FRAME_INTERVAL_SECS + delay_debt_s) * CPU_HZ
+            let mut available_cycles = ((FRAME_INTERVAL_SECS + frame_finished_signal.delay_debt_s)
+                * CPU_HZ as f64) as i64
+                + cycle_debt;
+
+            loop {
+                // For now let's say every instruction is 1 cycle.
+                let foo = 3;
+
+                available_cycles -= foo;
+
+                if available_cycles <= 0 {
+                    cycle_debt = available_cycles;
+                    break;
+                }
+            }
         }
     });
 
@@ -94,10 +97,11 @@ fn main() {
     let mut previous_frame_stamp = Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        /* for i in buffer.iter_mut() {
+        for i in buffer.iter_mut() {
             *i = v; // write something more funny here!
             v += 1;
-        } */
+            v += v.ilog(4);
+        }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
