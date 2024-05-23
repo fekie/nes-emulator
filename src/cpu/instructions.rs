@@ -19,11 +19,22 @@ impl Cpu {
     pub fn AND(&mut self, presumed_mem_byte: u8) {
         let _ = self.accumulator_register & presumed_mem_byte;
     }
+  
     pub fn ASL(&mut self, presumed_mem_byte: u8) {}
 
     pub fn JMP(&mut self, presumed_argument: u8) {
         self.program_counter = presumed_argument.into();
     }
+  
+    pub fn BCC(&mut self) {
+        if !self.processor_status.carry_flag() {
+            self.program_counter;
+        }
+    }
+
+    // all the instructions starting with T are implied addressing
+    pub fn TAX(&mut self) {}
+
 
     pub fn CLC(&mut self) {
         self.processor_status.clear_carry_flag();
