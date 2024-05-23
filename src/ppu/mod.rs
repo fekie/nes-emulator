@@ -1,3 +1,3 @@
 pub struct PPU {
-    registers: [u8; 6],
+    pub registers: [u8; 8],
 }
