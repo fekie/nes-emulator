@@ -1,21 +1,13 @@
 use crate::ppu::PPU;
 use std::cell::RefCell;
 use std::rc::Rc;
+mod instructions;
+
+
+
 
 #[derive(Debug, Clone, Copy)]
 pub struct ProcessorStatus(u8);
-
-impl ProcessorStatus {
-    fn set_carry(&mut self) {
-        let mask = 0b0000_0001;
-        self.0 |= mask;
-    }
-
-    fn clear_carry(&mut self) {
-        let mask = 0b1111_1110;
-        self.0 &= mask;
-    }
-}
 
 pub struct Cpu {
     accumulator_register: u8,
@@ -64,4 +56,32 @@ impl CpuMemoryMapper {
             _ => unimplemented!(),
         }
     }
+}
+
+
+
+#[test]
+fn test_flags() {
+    let mut flag_reg = ProcessorStatus::new();
+    assert_eq!(flag_reg.carry_flag(), false);
+    assert_eq!({flag_reg.set_carry_flag(); flag_reg.carry_flag()}, true);
+    assert_eq!({flag_reg.clear_carry_flag(); flag_reg.carry_flag()}, false);
+    assert_eq!(flag_reg.zero_flag(), false);
+    assert_eq!({flag_reg.set_zero_flag(); flag_reg.zero_flag()}, true);
+    assert_eq!({flag_reg.clear_zero_flag(); flag_reg.zero_flag()}, false);
+    assert_eq!(flag_reg.inter_flag(), false);
+    assert_eq!({flag_reg.set_inter_flag(); flag_reg.inter_flag()}, true);
+    assert_eq!({flag_reg.clear_inter_flag(); flag_reg.inter_flag()}, false);
+    assert_eq!(flag_reg.deci_flag(), false);
+    assert_eq!({flag_reg.set_deci_flag(); flag_reg.deci_flag()}, true);
+    assert_eq!({flag_reg.clear_deci_flag(); flag_reg.deci_flag()}, false);
+    assert_eq!(flag_reg.break_flag(), false);
+    assert_eq!({flag_reg.set_break_flag(); flag_reg.break_flag()}, true);
+    assert_eq!({flag_reg.clear_break_flag(); flag_reg.break_flag()}, false);
+    assert_eq!(flag_reg.over_flag(), false);
+    assert_eq!({flag_reg.set_over_flag(); flag_reg.over_flag()}, true);
+    assert_eq!({flag_reg.clear_over_flag(); flag_reg.over_flag()}, false);
+    assert_eq!(flag_reg.neg_flag(), false);
+    assert_eq!({flag_reg.set_neg_flag(); flag_reg.neg_flag()}, true);
+    assert_eq!({flag_reg.clear_neg_flag(); flag_reg.neg_flag()}, false);
 }
