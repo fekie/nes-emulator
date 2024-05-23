@@ -33,7 +33,7 @@ impl Cpu {
     }
 
     // all the instructions starting with T are implied addressing
-    pub fn TAX(&mut self) {}
+    pub fn TAX(&mut self) { }
 
 
     pub fn CLC(&mut self) {
