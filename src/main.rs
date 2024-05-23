@@ -18,8 +18,8 @@ const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
 
 const TARGET_FPS: usize = 60;
 
-mod cpu;
-mod ppu;
+pub mod cpu;
+pub mod ppu;
 
 #[derive(Default, Debug)]
 enum Keycode {
