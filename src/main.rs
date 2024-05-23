@@ -18,8 +18,15 @@ const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
 
 const TARGET_FPS: usize = 60;
 
+pub mod cartridge;
 pub mod cpu;
 pub mod ppu;
+
+pub trait Mapper {
+    fn read(&self, address: u16) -> u8;
+
+    fn write(&mut self, address: u16, byte: u8);
+}
 
 #[derive(Default, Debug)]
 enum Keycode {

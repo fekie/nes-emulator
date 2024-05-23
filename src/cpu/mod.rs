@@ -1,6 +1,9 @@
+use crate::cartridge::Cartridge;
 use crate::ppu::PPU;
+use crate::Mapper;
 use std::cell::RefCell;
 use std::rc::Rc;
+
 mod instructions;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -139,21 +142,28 @@ pub struct WorkRAM([u8; 0x800]);
 /// | *$8000-$FFFF  | $8000  | Usually cartridge ROM and mapper registers.                              |   |   |
 pub struct CpuMemoryMapper {
     work_ram: WorkRAM,
+    cartridge: Cartridge,
     ppu: Rc<RefCell<PPU>>,
 }
 
-impl CpuMemoryMapper {
-    /// Reads the value turned from the address.
+impl Mapper for CpuMemoryMapper {
     fn read(&self, address: u16) -> u8 {
         match address {
             // Handle the work RAM and the mirrors.
             0x0000..=0x1FFF => self.work_ram.0[address as usize % 0x0800],
             // Handle PPU registers and the mirrors.
             0x2000..=0x3FFF => self.ppu.borrow().registers[((address - 0x2000) % 8) as usize],
+            // Saved for APU
             0x4000..=0x4017 => unimplemented!(),
-
-            _ => unimplemented!(),
+            // Disabled
+            0x4018..=0x401F => unimplemented!(),
+            // Route to cartridge mapper
+            0x4020..=0xFFFF => self.cartridge.read(address),
         }
+    }
+
+    fn write(&mut self, address: u16, byte: u8) {
+        todo!()
     }
 }
 
