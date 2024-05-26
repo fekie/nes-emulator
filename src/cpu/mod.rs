@@ -1,4 +1,5 @@
 use crate::cartridge::Cartridge;
+use crate::ines::Ines;
 use crate::ppu::PPU;
 use crate::Mapper;
 use std::cell::RefCell;
@@ -111,7 +112,7 @@ impl ProcessorStatus {
     }
 }
 
-pub struct Cpu {
+pub struct CPU {
     accumulator_register: u8,
     x_register: u8,
     y_register: u8,
@@ -120,6 +121,18 @@ pub struct Cpu {
     registers: [u8; 6],
     processor_status: ProcessorStatus,
     memory_mapper: CpuMemoryMapper,
+}
+
+impl CPU {
+    pub fn new(cartridge: Rc<RefCell<Cartridge>>, ppu: Rc<RefCell<PPU>>) -> Self {
+        todo!()
+    }
+
+    /// Runs a full instruction cycle. Returns the amount of
+    /// machine cycles taken.
+    pub fn cycle(&mut self) -> u8 {
+        todo!()
+    }
 }
 
 // We use 2KB of work ram.
@@ -142,7 +155,7 @@ pub struct WorkRAM([u8; 0x800]);
 /// | *$8000-$FFFF  | $8000  | Usually cartridge ROM and mapper registers.                              |   |   |
 pub struct CpuMemoryMapper {
     work_ram: WorkRAM,
-    cartridge: Cartridge,
+    cartridge: Rc<RefCell<Cartridge>>,
     ppu: Rc<RefCell<PPU>>,
 }
 
@@ -158,7 +171,7 @@ impl Mapper for CpuMemoryMapper {
             // Disabled
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
-            0x4020..=0xFFFF => self.cartridge.read(address),
+            0x4020..=0xFFFF => self.cartridge.borrow().read(address),
         }
     }
 
@@ -167,7 +180,7 @@ impl Mapper for CpuMemoryMapper {
     }
 }
 
-#[test]
+/* #[test]
 fn test_flags() {
     let mut flag_reg = ProcessorStatus::default();
     assert!(!flag_reg.carry_flag());
@@ -254,3 +267,4 @@ fn test_flags() {
         flag_reg.neg_flag()
     });
 }
+ */

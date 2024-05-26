@@ -1,9 +1,16 @@
 //! System info:
+use cartridge::Cartridge;
+use clap::Parser;
+use cpu::CPU;
+use ines::Ines;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
+use ppu::PPU;
+use std::borrow::{Borrow, BorrowMut};
+use std::cell::RefCell;
 use std::rc::Rc;
-use std::thread::{self, spawn};
-use std::time::{Duration, Instant};
+use std::thread::spawn;
+use std::time::Instant;
 
 const WIDTH: usize = 256;
 const HEIGHT: usize = 240;
@@ -20,6 +27,7 @@ const TARGET_FPS: usize = 60;
 
 pub mod cartridge;
 pub mod cpu;
+pub mod ines;
 pub mod ppu;
 
 pub trait Mapper {
@@ -27,6 +35,8 @@ pub trait Mapper {
 
     fn write(&mut self, address: u16, byte: u8);
 }
+
+pub struct MapperType {}
 
 #[derive(Default, Debug)]
 enum Keycode {
@@ -42,11 +52,26 @@ struct FrameFinishedSignal {
     delay_debt_s: f64,
 }
 
-fn main() {
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    rom: String,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+    let rom = Ines::parse(&std::fs::read(args.rom)?);
+
     let (tx, rx) = crossbeam_channel::unbounded::<FrameFinishedSignal>();
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
+        let cartridge = Rc::new(RefCell::new(rom.into()));
+
+        let ppu = Rc::new(RefCell::new(PPU::new()));
+        let mut cpu = CPU::new(cartridge, ppu);
+
         // If we execute an instruction and it takes more cycles than we have available,
         // then we store the amount here (as a negative number) that we need to take off.
         let mut cycle_debt: i64 = 0;
@@ -58,10 +83,9 @@ fn main() {
                 + cycle_debt;
 
             loop {
-                // For now let's say every instruction is 1 cycle.
-                let foo = 3;
+                let cycles_taken = cpu.cycle();
 
-                available_cycles -= foo;
+                available_cycles -= cycles_taken as i64;
 
                 if available_cycles <= 0 {
                     cycle_debt = available_cycles;
@@ -114,4 +138,6 @@ fn main() {
         // Move it back if it has issues.
         previous_frame_stamp = Instant::now();
     }
+
+    Ok(())
 }

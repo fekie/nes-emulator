@@ -1,6 +1,12 @@
-use crate::Mapper;
+use crate::{ines::Ines, Mapper};
 
 pub struct Cartridge(Box<dyn Mapper>);
+
+impl From<Ines> for Cartridge {
+    fn from(value: Ines) -> Self {
+        todo!()
+    }
+}
 
 impl Cartridge {
     pub fn read(&self, address: u16) -> u8 {
