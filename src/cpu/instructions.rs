@@ -49,7 +49,7 @@ impl CPU {
     }
 
     pub fn CLV(&mut self) {
-        self.processor_status.clear_over_flag();
+        self.processor_status.clear_overflow_flag();
     }
 
     pub fn SEC(&mut self) {
