@@ -1,9 +1,16 @@
+use crate::cartridge::{self, Cartridge};
+
+#[derive(Debug, Default)]
 pub struct PPU {
     pub registers: [u8; 8],
 }
 
 impl PPU {
     pub fn new() -> Self {
-        PPU { registers: [0; 8] }
+        Self::default()
+    }
+
+    pub fn tick(&mut self, cartridge: &Cartridge) {
+        // do nothing right now
     }
 }

@@ -124,13 +124,13 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(cartridge: Rc<RefCell<Cartridge>>, ppu: Rc<RefCell<PPU>>) -> Self {
+    pub fn new() -> Self {
         todo!()
     }
 
     /// Runs a full instruction cycle. Returns the amount of
     /// machine cycles taken.
-    pub fn cycle(&mut self) -> u8 {
+    pub fn cycle(&mut self, ppu: &mut PPU) -> u8 {
         todo!()
     }
 }

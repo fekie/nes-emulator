@@ -1,4 +1,6 @@
 //! System info:
+use crate::bus::Interrupts;
+use bus::Bus;
 use cartridge::Cartridge;
 use clap::Parser;
 use cpu::CPU;
@@ -25,6 +27,7 @@ const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
 
 const TARGET_FPS: usize = 60;
 
+pub mod bus;
 pub mod cartridge;
 pub mod cpu;
 pub mod ines;
@@ -34,6 +37,14 @@ pub trait Mapper {
     fn read(&self, address: u16) -> u8;
 
     fn write(&mut self, address: u16, byte: u8);
+}
+
+pub trait ClockableMapper {
+    fn read(&self, address: u16) -> u8;
+
+    fn write(&mut self, address: u16, byte: u8);
+
+    fn clock(&mut self, interrupts: &Interrupts);
 }
 
 pub struct MapperType {}
@@ -67,29 +78,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
-        let cartridge = Rc::new(RefCell::new(rom.into()));
+        let cartridge: Cartridge = rom.into();
 
-        let ppu = Rc::new(RefCell::new(PPU::new()));
-        let mut cpu = CPU::new(cartridge, ppu);
+        let mut bus = Bus::new(cartridge);
 
         // If we execute an instruction and it takes more cycles than we have available,
         // then we store the amount here (as a negative number) that we need to take off.
-        let mut cycle_debt: i64 = 0;
+        let mut cpu_cycle_debt: i64 = 0;
 
         while let Ok(frame_finished_signal) = rx.recv() {
             // Do cycles for (FRAME_INTERVAL_SECS + delay_debt_s) * CPU_HZ
-            let mut available_cycles = ((FRAME_INTERVAL_SECS + frame_finished_signal.delay_debt_s)
-                * CPU_HZ as f64) as i64
-                + cycle_debt;
+            let mut available_cpu_cycles =
+                ((FRAME_INTERVAL_SECS + frame_finished_signal.delay_debt_s) * CPU_HZ as f64) as i64
+                    + cpu_cycle_debt;
 
-            // Each tick cycle, do 3 PPU cycles, and
+            // Each time we do a cpu instruction, find out how many clock cycles it
+            // took, multiply by 12, and then run that many master clock cycles on the bus.
             loop {
-                let cycles_taken = cpu.cycle();
+                let cpu_cycles_taken = bus.clock_cpu();
 
-                available_cycles -= cycles_taken as i64;
+                available_cpu_cycles -= cpu_cycles_taken as i64;
 
-                if available_cycles <= 0 {
-                    cycle_debt = available_cycles;
+                let machine_cycles_taken = cpu_cycles_taken * CLOCK_DIVISOR as u8;
+                bus.clock_bus(machine_cycles_taken);
+
+                // If we're out of cpu cycles, record how much we went over and then
+                // stop running cycles until the next request
+                if available_cpu_cycles <= 0 {
+                    cpu_cycle_debt = available_cpu_cycles;
                     break;
                 }
             }
