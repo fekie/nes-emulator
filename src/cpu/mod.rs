@@ -1,6 +1,9 @@
+use crate::cartridge::Cartridge;
 use crate::ppu::PPU;
+use crate::Mapper;
 use std::cell::RefCell;
 use std::rc::Rc;
+
 mod instructions;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -21,6 +24,8 @@ impl ProcessorStatus {
         self.0 &= mask;
     }
 
+    //
+
     pub fn zero_flag(&self) -> bool {
         self.0 & 0b0000_0010 != 0
     }
@@ -35,6 +40,8 @@ impl ProcessorStatus {
         self.0 &= mask;
         self.0 |= mask;
     }
+
+    //
 
     pub fn interrupt_disable_flag(&self) -> bool {
         self.0 & 0b0000_0100 != 0
@@ -51,6 +58,8 @@ impl ProcessorStatus {
         self.0 |= mask;
     }
 
+    //
+
     pub fn decimal_flag(&self) -> bool {
         self.0 & 0b0000_1000 != 0
     }
@@ -64,6 +73,8 @@ impl ProcessorStatus {
         let mask = 0b1111_0111;
         self.0 &= mask;
     }
+
+    //
 
     pub fn break_flag(&self) -> bool {
         self.0 & 0b0001_0000 != 0
@@ -79,36 +90,40 @@ impl ProcessorStatus {
         self.0 &= mask;
     }
 
-    pub fn over_flag(&self) -> bool {
+    //
+
+    pub fn overflow_flag(&self) -> bool {
         self.0 & 0b0100_0000 != 0
     }
 
-    pub fn set_over_flag(&mut self) {
+    pub fn set_overflow_flag(&mut self) {
         let mask = 0b0100_0000;
         self.0 |= mask;
     }
 
-    pub fn clear_over_flag(&mut self) {
+    pub fn clear_overflow_flag(&mut self) {
         let mask = 0b1011_1111;
         self.0 &= mask;
     }
 
-    pub fn neg_flag(&self) -> bool {
+    //
+
+    pub fn negative_flag(&self) -> bool {
         self.0 & 0b1000_0000 != 0
     }
 
-    pub fn set_neg_flag(&mut self) {
+    pub fn set_negative_flag(&mut self) {
         let mask = 0b1000_0000;
         self.0 |= mask;
     }
 
-    pub fn clear_neg_flag(&mut self) {
+    pub fn clear_negative_flag(&mut self) {
         let mask = 0b0111_1111;
         self.0 &= mask;
     }
 }
 
-pub struct Cpu {
+pub struct CPU {
     accumulator_register: u8,
     x_register: u8,
     y_register: u8,
@@ -117,6 +132,18 @@ pub struct Cpu {
     registers: [u8; 6],
     processor_status: ProcessorStatus,
     memory_mapper: CpuMemoryMapper,
+}
+
+impl CPU {
+    pub fn new() -> Self {
+        todo!()
+    }
+
+    /// Runs a full instruction cycle. Returns the amount of
+    /// machine cycles taken.
+    pub fn cycle(&mut self, ppu: &mut PPU) -> u8 {
+        todo!()
+    }
 }
 
 // We use 2KB of work ram.
@@ -139,108 +166,104 @@ pub struct WorkRAM([u8; 0x800]);
 /// | *$8000-$FFFF  | $8000  | Usually cartridge ROM and mapper registers.                              |   |   |
 pub struct CpuMemoryMapper {
     work_ram: WorkRAM,
+    cartridge: Rc<RefCell<Cartridge>>,
     ppu: Rc<RefCell<PPU>>,
 }
 
-impl CpuMemoryMapper {
-    /// Reads the value turned from the address.
+impl Mapper for CpuMemoryMapper {
     fn read(&self, address: u16) -> u8 {
         match address {
             // Handle the work RAM and the mirrors.
             0x0000..=0x1FFF => self.work_ram.0[address as usize % 0x0800],
             // Handle PPU registers and the mirrors.
             0x2000..=0x3FFF => self.ppu.borrow().registers[((address - 0x2000) % 8) as usize],
+            // Saved for APU
             0x4000..=0x4017 => unimplemented!(),
-
-            _ => unimplemented!(),
+            // Disabled
+            0x4018..=0x401F => unimplemented!(),
+            // Route to cartridge mapper
+            0x4020..=0xFFFF => self.cartridge.borrow().read(address),
         }
+    }
+
+    fn write(&mut self, address: u16, byte: u8) {
+        todo!()
     }
 }
 
-#[test]
-fn test_flags() {
-    let mut flag_reg = ProcessorStatus::default();
-    assert!(!flag_reg.carry_flag());
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    assert!({
+    #[test]
+    fn test_carry() {
+        let mut flag_reg = ProcessorStatus::default();
+        assert!(!flag_reg.carry_flag());
+
         flag_reg.set_carry_flag();
-        flag_reg.carry_flag()
-    });
+        assert!(flag_reg.carry_flag());
 
-    assert!(!{
         flag_reg.clear_carry_flag();
-        flag_reg.carry_flag()
-    });
+        assert!(!flag_reg.carry_flag());
+    }
 
-    assert!(!flag_reg.zero_flag());
+    #[test]
+    fn test_zero() {
+        let mut flag_reg = ProcessorStatus::default();
+        assert!(!flag_reg.zero_flag());
 
-    assert!({
         flag_reg.set_zero_flag();
-        flag_reg.zero_flag()
-    });
+        assert!(flag_reg.zero_flag());
 
-    assert!(!{
         flag_reg.clear_zero_flag();
-        flag_reg.zero_flag()
-    });
+        assert!(!flag_reg.zero_flag());
+    }
 
-    assert!(!flag_reg.interrupt_disable_flag());
+    #[test]
+    fn test_interrupt_disable() {
+        let mut flag_reg = ProcessorStatus::default();
+        assert!(!flag_reg.interrupt_disable_flag());
 
-    assert!({
         flag_reg.set_interrupt_disable_flag();
-        flag_reg.interrupt_disable_flag()
-    });
+        assert!(flag_reg.interrupt_disable_flag());
 
-    assert!(!{
         flag_reg.clear_interrupt_disable_flag();
-        flag_reg.interrupt_disable_flag()
-    });
+        assert!(!flag_reg.interrupt_disable_flag());
+    }
 
-    assert!(!flag_reg.decimal_flag());
+    #[test]
+    fn test_decimal() {
+        let mut flag_reg = ProcessorStatus::default();
+        assert!(!flag_reg.decimal_flag());
 
-    assert!({
         flag_reg.set_decimal_flag();
-        flag_reg.decimal_flag()
-    });
+        assert!(flag_reg.decimal_flag());
 
-    assert!(!{
         flag_reg.clear_decimal_flag();
-        flag_reg.decimal_flag()
-    });
+        assert!(!flag_reg.decimal_flag());
+    }
 
-    assert!(!flag_reg.break_flag());
+    #[test]
+    fn test_overflow() {
+        let mut flag_reg = ProcessorStatus::default();
+        assert!(!flag_reg.overflow_flag());
 
-    assert!({
-        flag_reg.set_break_flag();
-        flag_reg.break_flag()
-    });
+        flag_reg.set_overflow_flag();
+        assert!(flag_reg.overflow_flag());
 
-    assert!(!{
-        flag_reg.clear_break_flag();
-        flag_reg.break_flag()
-    });
+        flag_reg.clear_overflow_flag();
+        assert!(!flag_reg.overflow_flag());
+    }
 
-    assert!(!flag_reg.over_flag());
+    #[test]
+    fn test_neg() {
+        let mut flag_reg = ProcessorStatus::default();
+        assert!(!flag_reg.negative_flag());
 
-    assert!({
-        flag_reg.set_over_flag();
-        flag_reg.over_flag()
-    });
+        flag_reg.set_negative_flag();
+        assert!(flag_reg.negative_flag());
 
-    assert!(!{
-        flag_reg.clear_over_flag();
-        flag_reg.over_flag()
-    });
-
-    assert!(!flag_reg.neg_flag());
-
-    assert!({
-        flag_reg.set_neg_flag();
-        flag_reg.neg_flag()
-    });
-
-    assert!(!{
-        flag_reg.clear_neg_flag();
-        flag_reg.neg_flag()
-    });
+        flag_reg.clear_negative_flag();
+        assert!(!flag_reg.negative_flag());
+    }
 }

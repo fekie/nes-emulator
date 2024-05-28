@@ -1,6 +1,8 @@
-use super::Cpu;
+#![allow(non_snake_case)]
 
-impl Cpu {
+use super::CPU;
+
+impl CPU {
     pub fn ADC(&mut self, presumed_mem_byte: u8) {
         //Add with Carry
         let wrapped_sum = self.accumulator_register.wrapping_add(presumed_mem_byte);
@@ -49,7 +51,7 @@ impl Cpu {
     }
 
     pub fn CLV(&mut self) {
-        self.processor_status.clear_over_flag();
+        self.processor_status.clear_overflow_flag();
     }
 
     pub fn SEC(&mut self) {
