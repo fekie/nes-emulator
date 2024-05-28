@@ -1,6 +1,6 @@
-use super::Cpu;
+use super::CPU;
 
-impl Cpu {
+impl CPU {
     pub fn ADC(&mut self, presumed_mem_byte: u8) {
         //Add with Carry
         let wrapped_sum = self.accumulator_register.wrapping_add(presumed_mem_byte);

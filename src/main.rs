@@ -82,6 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 * CPU_HZ as f64) as i64
                 + cycle_debt;
 
+            // Each tick cycle, do 3 PPU cycles, and
             loop {
                 let cycles_taken = cpu.cycle();
 
