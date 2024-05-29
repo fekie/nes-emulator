@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use super::Cpu;
 use super::AddressingMode::{self, *};
 pub enum Instructions { // fekie you can add some documentation here if you want, I aint even gonna bother
@@ -60,8 +62,9 @@ pub enum Instructions { // fekie you can add some documentation here if you want
 
 }
 
+use super::CPU;
 
-impl Cpu {
+impl CPU {
     pub fn ADC(&mut self, presumed_mem_byte: u8) {
         //Add with Carry
         let wrapped_sum = self.accumulator_register.wrapping_add(presumed_mem_byte);
@@ -77,6 +80,7 @@ impl Cpu {
             self.processor_status.set_carry_flag()
         }
     }
+
     pub fn AND(&mut self, presumed_mem_byte: u8) {
         let _ = self.accumulator_register & presumed_mem_byte;
     }
@@ -113,25 +117,30 @@ impl Cpu {
         self.accumulator_register = self.y_register;
     }
 
-
     pub fn CLC(&mut self) {
         self.processor_status.clear_carry_flag();
     }
+
     pub fn CLD(&mut self) {
         self.processor_status.clear_decimal_flag();
     }
+
     pub fn CLI(&mut self) {
         self.processor_status.clear_interrupt_disable_flag();
     }
+
     pub fn CLV(&mut self) {
-        self.processor_status.clear_over_flag();
+        self.processor_status.clear_overflow_flag();
     }
+
     pub fn SEC(&mut self) {
         self.processor_status.set_carry_flag();
     }
+
     pub fn SED(&mut self) {
         self.processor_status.set_decimal_flag();
     }
+
     pub fn SEI(&mut self) {
         self.processor_status.set_interrupt_disable_flag();
     }
