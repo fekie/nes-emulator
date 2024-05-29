@@ -1,3 +1,5 @@
+use instructions::{AddressingMode, FullOpcode, Instruction};
+
 use crate::cartridge::Cartridge;
 use crate::ppu::PPU;
 use crate::Mapper;
@@ -5,7 +7,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 mod instructions;
-use instructions::Instructions;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProcessorStatus(u8);
 
@@ -126,7 +127,6 @@ impl ProcessorStatus {
     }
 }
 
-
 pub struct CPU {
     accumulator_register: u8,
     x_register: u8,
@@ -139,15 +139,61 @@ pub struct CPU {
 }
 
 impl CPU {
+    /// Creates a new CPU and initializes it to its startup state.
     pub fn new() -> Self {
-        todo!()
+        todo!();
     }
 
     /// Runs a full instruction cycle. Returns the amount of
     /// machine cycles taken.
     pub fn cycle(&mut self, ppu: &mut PPU) -> u8 {
-        todo!()
+        // fetch + decode
+        let instruction = self.fetch();
+        // execute
+        let machine_cycles_taken = todo!();
+        machine_cycles_taken
     }
+
+    /// Fetches the next instruction and updates the program counter.
+    pub fn fetch(&mut self) -> Instruction {
+        let full_opcode = FullOpcode::new(self.memory_mapper.read(self.program_counter));
+
+        // Low byte comes first as words are in little-endian
+        let (low_byte, high_byte) = match full_opcode.addressing_mode {
+            AddressingMode::Accumulator | AddressingMode::Implied => (None, None),
+            //
+            AddressingMode::Immediate
+            | AddressingMode::IndirectXIndexed
+            | AddressingMode::IndirectYIndexed
+            | AddressingMode::Relative
+            | AddressingMode::Zeropage
+            | AddressingMode::ZeropageXIndexed
+            | AddressingMode::ZeropageYIndexed => (
+                Some(self.memory_mapper.read(self.program_counter + 1)),
+                None,
+            ),
+            //
+            AddressingMode::Absolute
+            | AddressingMode::AbsoluteXIndexed
+            | AddressingMode::AbsoluteYIndexed => (
+                Some(self.memory_mapper.read(self.program_counter + 1)),
+                Some(self.memory_mapper.read(self.program_counter + 2)),
+            ),
+        };
+
+        // Decide how much we need to increment the PC
+        self.program_counter += full_opcode.addressing_mode.bytes_required();
+
+        Instruction {
+            opcode: full_opcode.opcode,
+            addressing_mode: full_opcode.addressing_mode,
+            low_byte,
+            high_byte,
+        }
+    }
+
+    /// Executes the instruction and returns the amount of machine cycles that it took.
+    pub fn execute(&mut self, instruction: Instruction) -> u8 {}
 }
 
 // We use 2KB of work ram.
@@ -195,27 +241,14 @@ impl Mapper for CpuMemoryMapper {
     }
 }
 
-//https://emudev.de/nes-emulator/opcodes-and-addressing-modes-the-6502/   <-- good stuff
-//https://blogs.oregonstate.edu/ericmorgan/2022/01/21/6502-addressing-modes/  <--- also this too
-pub enum AddressingMode {
-    Relative{offset: u8},
-    Accumulator{accumulator: u8}, //takes 2 cycles to complete
-    Immediate { adr: u16 }, // 2 cycles
-    Implied, //no addressing mode, but takes 2 cycles
-    Zeropage { adr: u16 },
-    ZeropageXIndex { adr: u16, X: u8 },
-    ZeropageYIndex { adr: u16, Y: u8 },
-    IndirectXIndex { adr: u16, X: u8 },
-    IndirectYIndex { adr: u16, Y: u8 },
-    Absolute { adr: u16 }, // 4 cycles to complete, wierd stuff happens incrementing it beyond absolute address causing it to cross pages and requried another cpu cycle but this only applied below
-    AbsoluteXIndex { adr: u16, X: u8 }, // 4 cycles to complete, incremented by the value in the X register
-    AbsoluteYIndex { adr: u16, Y: u8 }, // 4 cycles to complete, incremented by the value in the Y register
-}
-
-pub fn decodeOPandADR(opcode: u8) -> Instructions { // just some sketches, can change later on
+/* pub fn decodeOPandADR(opcode: u8) -> Instructions {
+    // just some sketches, can change later on
     match opcode {
-        0x69 => Instructions::ADC { adr: AddressingMode::Implied },
-        0x65 => Instructions::ADC { adr: AddressingMode::Zeropage { adr: () } }, // ok for stuff that needs actual operands, we can manually get them by looking at the next mem locations ofter the opcode
+        0x69 => Instructions::ADC {
+            adr: AddressingMode::Implied,
+        },
+        _ => unimplemented!(),
+        /* 0x65 => Instructions::ADC { adr: AddressingMode::Zeropage { adr: () } }, // ok for stuff that needs actual operands, we can manually get them by looking at the next mem locations ofter the opcode
         0x75 => Instructions::ADC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } },
         0x6D => Instructions::ADC { adr: AddressingMode::Absolute { adr: () } },
         0x7D => Instructions::ADC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
@@ -274,11 +307,9 @@ pub fn decodeOPandADR(opcode: u8) -> Instructions { // just some sketches, can c
         0x5D => Instructions::EOR { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
         0x59 => Instructions::EOR { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () }}
         0x41 => Instructions::EOR { adr: AddressingMode::IndirectXIndex { adr: (), X: () }}
-        0x51 => Instructions::EOR { adr: AddressingMode::IndirectYIndex { adr: (), Y: () }}
-        
+        0x51 => Instructions::EOR { adr: AddressingMode::IndirectYIndex { adr: (), Y: () }} */
     }
-}
-
+} */
 
 #[cfg(test)]
 mod test {
