@@ -193,7 +193,9 @@ impl CPU {
     }
 
     /// Executes the instruction and returns the amount of machine cycles that it took.
-    pub fn execute(&mut self, instruction: Instruction) -> u8 {}
+    pub fn execute(&mut self, instruction: Instruction) -> u8 {
+        todo!()
+    }
 }
 
 // We use 2KB of work ram.
