@@ -139,8 +139,9 @@ pub struct CPU {
 }
 
 impl CPU {
+    /// Creates a new CPU and initializes it to its startup state.
     pub fn new() -> Self {
-        todo!()
+        todo!();
     }
 
     /// Runs a full instruction cycle. Returns the amount of
