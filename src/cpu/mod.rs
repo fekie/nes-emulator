@@ -5,11 +5,14 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 mod instructions;
-
+use instructions::Instructions;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProcessorStatus(u8);
 
 impl ProcessorStatus {
+    pub fn new() -> Self {
+        ProcessorStatus(0)
+    }
     pub fn carry_flag(&self) -> bool {
         self.0 & 0b0000_0001 != 0
     }
@@ -123,6 +126,7 @@ impl ProcessorStatus {
     }
 }
 
+
 pub struct CPU {
     accumulator_register: u8,
     x_register: u8,
@@ -191,6 +195,91 @@ impl Mapper for CpuMemoryMapper {
     }
 }
 
+//https://emudev.de/nes-emulator/opcodes-and-addressing-modes-the-6502/   <-- good stuff
+//https://blogs.oregonstate.edu/ericmorgan/2022/01/21/6502-addressing-modes/  <--- also this too
+pub enum AddressingMode {
+    Relative{offset: u8},
+    Accumulator{accumulator: u8}, //takes 2 cycles to complete
+    Immediate { adr: u16 }, // 2 cycles
+    Implied, //no addressing mode, but takes 2 cycles
+    Zeropage { adr: u16 },
+    ZeropageXIndex { adr: u16, X: u8 },
+    ZeropageYIndex { adr: u16, Y: u8 },
+    IndirectXIndex { adr: u16, X: u8 },
+    IndirectYIndex { adr: u16, Y: u8 },
+    Absolute { adr: u16 }, // 4 cycles to complete, wierd stuff happens incrementing it beyond absolute address causing it to cross pages and requried another cpu cycle but this only applied below
+    AbsoluteXIndex { adr: u16, X: u8 }, // 4 cycles to complete, incremented by the value in the X register
+    AbsoluteYIndex { adr: u16, Y: u8 }, // 4 cycles to complete, incremented by the value in the Y register
+}
+
+pub fn decodeOPandADR(opcode: u8) -> Instructions { // just some sketches, can change later on
+    match opcode {
+        0x69 => Instructions::ADC { adr: AddressingMode::Implied },
+        0x65 => Instructions::ADC { adr: AddressingMode::Zeropage { adr: () } }, // ok for stuff that needs actual operands, we can manually get them by looking at the next mem locations ofter the opcode
+        0x75 => Instructions::ADC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } },
+        0x6D => Instructions::ADC { adr: AddressingMode::Absolute { adr: () } },
+        0x7D => Instructions::ADC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
+        0x79 => Instructions::ADC { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () } }
+        0x61 => Instructions::ADC { adr: AddressingMode::IndirectXIndex { adr: (), X: () } }
+        0x71 => Instructions::ADC { adr: AddressingMode::IndirectYIndex { adr: (), Y: () } }
+        0x29 => Instructions::AND { adr: AddressingMode::Immediate { adr: () } }
+        0x25 => Instructions::AND { adr: AddressingMode::Zeropage { adr: () } }
+        0x35 => Instructions::AND { adr: AddressingMode::ZeropageXIndex { adr: (), X: () } }
+        0x2D => Instructions::AND { adr: AddressingMode::Absolute { adr: () } }
+        0x3D => Instructions::AND { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
+        0x39 => Instructions::AND { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () } }
+        0x21 => Instructions::AND { adr: AddressingMode::IndirectXIndex { adr: (), X: () } }
+        0x31 => Instructions::AND { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () } }
+        0x0A => Instructions::ASL { adr: AddressingMode::Accumulator { accumulator: () } }
+        0x06 => Instructions::ASL { adr: AddressingMode::Zeropage { adr: () } }
+        0x16 => Instructions::ASL { adr: AddressingMode::ZeropageXIndex { adr: (), X: () } }
+        0x0E => Instructions::ASL { adr: AddressingMode::Absolute { adr: () } }
+        0x1E => Instructions::ASL { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
+        0x90 => Instructions::BCC { adr: AddressingMode::Relative { offset: () } }
+        0xB0 => Instructions::BCS { adr: AddressingMode::Relative { offset: () } }
+        0xF0 => Instructions::BEQ { adr: AddressingMode::Relative { offset: () } }
+        0x24 => Instructions::BIT { adr: AddressingMode::Zeropage { adr: () } }
+        0x2C => Instructions::BIT { adr: AddressingMode::Absolute { adr: () } }
+        0x30 => Instructions::BMI { adr: AddressingMode::Relative { offset: () } }
+        0xD0 => Instructions::BNE { adr: AddressingMode::Relative { offset: () } }
+        0x10 => Instructions::BPL { adr: AddressingMode::Relative { offset: () } }
+        0x00 => Instructions::BRK { adr: AddressingMode::Implied }
+        0x50 => Instructions::BVC { adr: AddressingMode::Relative { offset: () } }
+        0x70 => Instructions::BVS { adr: AddressingMode::Relative { offset: () } }
+        0x18 => Instructions::CLC { adr: AddressingMode::Implied }
+        0xD8 => Instructions::CLD { adr: AddressingMode::Implied }
+        0x58 => Instructions::CLI { adr: AddressingMode::Implied }
+        0xB8 => Instructions::CLV { adr: AddressingMode::Implied }
+        0xC9 => Instructions::CMP { adr: AddressingMode::Immediate { adr: () } }
+        0xC5 => Instructions::CMP { adr: AddressingMode::Zeropage { adr: () }}
+        0xD5 => Instructions::CMP { adr: AddressingMode::ZeropageXIndex { adr: (), X: () } }
+        0xCD => Instructions::CMP { adr: AddressingMode::Absolute { adr: () } }
+        0xDD => Instructions::CMP { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
+        0xD9 => Instructions::CMP { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () }}
+        0xC1 => Instructions::CMP { adr: AddressingMode::IndirectXIndex { adr: (), X: () }}
+        0xD1 => Instructions::CMP { adr: AddressingMode::IndirectYIndex { adr: (), Y: () }}
+        0xC0 => Instructions::CPY { adr: AddressingMode::Immediate { adr: () } }
+        0xC4 => Instructions::CPY { adr: AddressingMode::Zeropage { adr: () }}
+        0xCC => Instructions::CPY { adr: AddressingMode::Absolute { adr: () }}
+        0xC6 => Instructions::DEC { adr: AddressingMode::Zeropage { adr: () } }
+        0xD6 => Instructions::DEC { adr: AddressingMode::ZeropageXIndex { adr: (), X: () }}
+        0xCE => Instructions::DEC { adr: AddressingMode::Absolute { adr: () } }
+        0xDE => Instructions::DEC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
+        0xCA => Instructions::DEx { adr: AddressingMode::Implied }
+        0x88 => Instructions::DEY { adr: AddressingMode::Implied }
+        0x49 => Instructions::EOR { adr: AddressingMode::Immediate { adr: () } }
+        0x45 => Instructions::EOR { adr: AddressingMode::Zeropage { adr: () }}
+        0x55 => Instructions::EOR { adr: AddressingMode::ZeropageXIndex { adr: (), X: () }}
+        0x4D => Instructions::EOR { adr: AddressingMode::Absolute { adr: () }}
+        0x5D => Instructions::EOR { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
+        0x59 => Instructions::EOR { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () }}
+        0x41 => Instructions::EOR { adr: AddressingMode::IndirectXIndex { adr: (), X: () }}
+        0x51 => Instructions::EOR { adr: AddressingMode::IndirectYIndex { adr: (), Y: () }}
+        
+    }
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -204,6 +293,7 @@ mod test {
         assert!(flag_reg.carry_flag());
 
         flag_reg.clear_carry_flag();
+
         assert!(!flag_reg.carry_flag());
     }
 
@@ -216,6 +306,7 @@ mod test {
         assert!(flag_reg.zero_flag());
 
         flag_reg.clear_zero_flag();
+
         assert!(!flag_reg.zero_flag());
     }
 

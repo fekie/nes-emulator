@@ -1,5 +1,67 @@
 #![allow(non_snake_case)]
 
+use super::Cpu;
+use super::AddressingMode::{self, *};
+pub enum Instructions { // fekie you can add some documentation here if you want, I aint even gonna bother
+    ADC{adr: AddressingMode},
+    AND{adr: AddressingMode},
+    ASL{adr: AddressingMode},
+    BCC{adr: AddressingMode},
+    BCS{adr: AddressingMode},
+    BEQ{adr: AddressingMode},
+    BIT{adr: AddressingMode},
+    BMI{adr: AddressingMode},
+    BNE{adr: AddressingMode},
+    BPL{adr: AddressingMode},
+    BRK{adr: AddressingMode},
+    BVC{adr: AddressingMode},
+    BVS{adr: AddressingMode},
+    CLC{adr: AddressingMode},
+    CLD{adr: AddressingMode},
+    CLI{adr: AddressingMode},
+    CLV{adr: AddressingMode},
+    CMP{adr: AddressingMode},
+    CPX{adr: AddressingMode},
+    CPY{adr: AddressingMode},
+    DEC{adr: AddressingMode},
+    DEx{adr: AddressingMode},
+    DEY{adr: AddressingMode},
+    EOR{adr: AddressingMode},
+    INC{adr: AddressingMode},
+    INX{adr: AddressingMode},
+    INY{adr: AddressingMode},
+    JMP{adr: AddressingMode},
+    JSR{adr: AddressingMode},
+    LDA{adr: AddressingMode},
+    LDX{adr: AddressingMode},
+    LDY{adr: AddressingMode},
+    LSR{adr: AddressingMode},
+    NOP{adr: AddressingMode},
+    ORA{adr: AddressingMode},
+    PHA{adr: AddressingMode},
+    PHP{adr: AddressingMode},
+    PLA{adr: AddressingMode},
+    PLP{adr: AddressingMode},
+    ROL{adr: AddressingMode},
+    ROR{adr: AddressingMode},
+    RTI{adr: AddressingMode},
+    RTD{adr: AddressingMode},
+    SBC{adr: AddressingMode},
+    SEC{adr: AddressingMode},
+    SED{adr: AddressingMode},
+    SEI{adr: AddressingMode},
+    STA{adr: AddressingMode},
+    STX{adr: AddressingMode},
+    STY{adr: AddressingMode},
+    TAX{adr: AddressingMode},
+    TAY{adr: AddressingMode},
+    TSX{adr: AddressingMode},
+    TXA{adr: AddressingMode},
+    TXS{adr: AddressingMode},
+    TYA{adr: AddressingMode},
+
+}
+
 use super::CPU;
 
 impl CPU {
@@ -36,7 +98,24 @@ impl CPU {
     }
 
     // all the instructions starting with T are implied addressing
-    pub fn TAX(&mut self) {}
+    pub fn TAX(&mut self) {
+        self.x_register = self.accumulator_register;
+    }
+    pub fn TAY(&mut self) {
+        self.y_register = self.accumulator_register;
+    }
+    pub fn TSX(&mut self) {
+        self.x_register = self.stack_pointer;
+    }
+    pub fn TXA(&mut self) {
+        self.accumulator_register = self.x_register;
+    }
+    pub fn TXS(&mut self) {
+        self.stack_pointer = self.x_register;
+    }
+    pub fn TYA(&mut self) {
+        self.accumulator_register = self.y_register;
+    }
 
     pub fn CLC(&mut self) {
         self.processor_status.clear_carry_flag();
