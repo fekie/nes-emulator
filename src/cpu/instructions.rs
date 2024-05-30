@@ -14,6 +14,7 @@ pub enum AddressingMode {
     Zeropage,
     ZeropageXIndexed,
     ZeropageYIndexed,
+    Indirect,
     IndirectXIndexed,
     IndirectYIndexed,
     Absolute,
@@ -39,6 +40,7 @@ pub enum Opcode {
     /// 0x7 | 0x5 | zero-page, x-indexed
     /// 0x7 | 0x9 | absolute, y-indexed
     /// 0x7 | 0xD | absolute, x-indexed
+    RTS,
     ADC,
     AND,
     ASL,

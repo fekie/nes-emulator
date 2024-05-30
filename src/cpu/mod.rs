@@ -163,6 +163,7 @@ impl CPU {
             AddressingMode::Accumulator | AddressingMode::Implied => (None, None),
             //
             AddressingMode::Immediate
+            | AddressingMode::Indirect
             | AddressingMode::IndirectXIndexed
             | AddressingMode::IndirectYIndexed
             | AddressingMode::Relative
@@ -239,79 +240,167 @@ impl Mapper for CpuMemoryMapper {
     }
 
     fn write(&mut self, address: u16, byte: u8) {
-        todo!()
+        
     }
 }
 
-/* pub fn decodeOPandADR(opcode: u8) -> Instructions {
+ pub fn decodeOPandADR(opcode: u8) -> FullOpcode {
     // just some sketches, can change later on
     match opcode {
-        0x69 => Instructions::ADC {
-            adr: AddressingMode::Implied,
-        },
-        _ => unimplemented!(),
-        /* 0x65 => Instructions::ADC { adr: AddressingMode::Zeropage { adr: () } }, // ok for stuff that needs actual operands, we can manually get them by looking at the next mem locations ofter the opcode
-        0x75 => Instructions::ADC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } },
-        0x6D => Instructions::ADC { adr: AddressingMode::Absolute { adr: () } },
-        0x7D => Instructions::ADC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
-        0x79 => Instructions::ADC { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () } }
-        0x61 => Instructions::ADC { adr: AddressingMode::IndirectXIndex { adr: (), X: () } }
-        0x71 => Instructions::ADC { adr: AddressingMode::IndirectYIndex { adr: (), Y: () } }
-        0x29 => Instructions::AND { adr: AddressingMode::Immediate { adr: () } }
-        0x25 => Instructions::AND { adr: AddressingMode::Zeropage { adr: () } }
-        0x35 => Instructions::AND { adr: AddressingMode::ZeropageXIndex { adr: (), X: () } }
-        0x2D => Instructions::AND { adr: AddressingMode::Absolute { adr: () } }
-        0x3D => Instructions::AND { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
-        0x39 => Instructions::AND { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () } }
-        0x21 => Instructions::AND { adr: AddressingMode::IndirectXIndex { adr: (), X: () } }
-        0x31 => Instructions::AND { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () } }
-        0x0A => Instructions::ASL { adr: AddressingMode::Accumulator { accumulator: () } }
-        0x06 => Instructions::ASL { adr: AddressingMode::Zeropage { adr: () } }
-        0x16 => Instructions::ASL { adr: AddressingMode::ZeropageXIndex { adr: (), X: () } }
-        0x0E => Instructions::ASL { adr: AddressingMode::Absolute { adr: () } }
-        0x1E => Instructions::ASL { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () } }
-        0x90 => Instructions::BCC { adr: AddressingMode::Relative { offset: () } }
-        0xB0 => Instructions::BCS { adr: AddressingMode::Relative { offset: () } }
-        0xF0 => Instructions::BEQ { adr: AddressingMode::Relative { offset: () } }
-        0x24 => Instructions::BIT { adr: AddressingMode::Zeropage { adr: () } }
-        0x2C => Instructions::BIT { adr: AddressingMode::Absolute { adr: () } }
-        0x30 => Instructions::BMI { adr: AddressingMode::Relative { offset: () } }
-        0xD0 => Instructions::BNE { adr: AddressingMode::Relative { offset: () } }
-        0x10 => Instructions::BPL { adr: AddressingMode::Relative { offset: () } }
-        0x00 => Instructions::BRK { adr: AddressingMode::Implied }
-        0x50 => Instructions::BVC { adr: AddressingMode::Relative { offset: () } }
-        0x70 => Instructions::BVS { adr: AddressingMode::Relative { offset: () } }
-        0x18 => Instructions::CLC { adr: AddressingMode::Implied }
-        0xD8 => Instructions::CLD { adr: AddressingMode::Implied }
-        0x58 => Instructions::CLI { adr: AddressingMode::Implied }
-        0xB8 => Instructions::CLV { adr: AddressingMode::Implied }
-        0xC9 => Instructions::CMP { adr: AddressingMode::Immediate { adr: () } }
-        0xC5 => Instructions::CMP { adr: AddressingMode::Zeropage { adr: () }}
-        0xD5 => Instructions::CMP { adr: AddressingMode::ZeropageXIndex { adr: (), X: () } }
-        0xCD => Instructions::CMP { adr: AddressingMode::Absolute { adr: () } }
-        0xDD => Instructions::CMP { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
-        0xD9 => Instructions::CMP { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () }}
-        0xC1 => Instructions::CMP { adr: AddressingMode::IndirectXIndex { adr: (), X: () }}
-        0xD1 => Instructions::CMP { adr: AddressingMode::IndirectYIndex { adr: (), Y: () }}
-        0xC0 => Instructions::CPY { adr: AddressingMode::Immediate { adr: () } }
-        0xC4 => Instructions::CPY { adr: AddressingMode::Zeropage { adr: () }}
-        0xCC => Instructions::CPY { adr: AddressingMode::Absolute { adr: () }}
-        0xC6 => Instructions::DEC { adr: AddressingMode::Zeropage { adr: () } }
-        0xD6 => Instructions::DEC { adr: AddressingMode::ZeropageXIndex { adr: (), X: () }}
-        0xCE => Instructions::DEC { adr: AddressingMode::Absolute { adr: () } }
-        0xDE => Instructions::DEC { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
-        0xCA => Instructions::DEx { adr: AddressingMode::Implied }
-        0x88 => Instructions::DEY { adr: AddressingMode::Implied }
-        0x49 => Instructions::EOR { adr: AddressingMode::Immediate { adr: () } }
-        0x45 => Instructions::EOR { adr: AddressingMode::Zeropage { adr: () }}
-        0x55 => Instructions::EOR { adr: AddressingMode::ZeropageXIndex { adr: (), X: () }}
-        0x4D => Instructions::EOR { adr: AddressingMode::Absolute { adr: () }}
-        0x5D => Instructions::EOR { adr: AddressingMode::AbsoluteXIndex { adr: (), X: () }}
-        0x59 => Instructions::EOR { adr: AddressingMode::AbsoluteYIndex { adr: (), Y: () }}
-        0x41 => Instructions::EOR { adr: AddressingMode::IndirectXIndex { adr: (), X: () }}
-        0x51 => Instructions::EOR { adr: AddressingMode::IndirectYIndex { adr: (), Y: () }} */
+        0x69 => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::Immediate },
+        0x65 => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::Zeropage }, 
+        0x75 => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x6D => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::Absolute },
+        0x7D => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x79 => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0x61 => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::IndirectXIndexed },
+        0x71 => FullOpcode { opcode: instructions::Opcode::ADC, addressing_mode: AddressingMode::IndirectYIndexed },
+        0x29 => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::Immediate },
+        0x25 => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::Zeropage },
+        0x35 => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x2D => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::Absolute },
+        0x3D => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x39 => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0x21 => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::IndirectXIndexed },
+        0x31 => FullOpcode { opcode: instructions::Opcode::AND, addressing_mode: AddressingMode::IndirectYIndexed },
+        0x0A => FullOpcode { opcode: instructions::Opcode::ASL, addressing_mode: AddressingMode::Accumulator },
+        0x06 => FullOpcode { opcode: instructions::Opcode::ASL, addressing_mode: AddressingMode::Zeropage },
+        0x16 => FullOpcode { opcode: instructions::Opcode::ASL, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x0E => FullOpcode { opcode: instructions::Opcode::ASL, addressing_mode: AddressingMode::Absolute },
+        0x1E => FullOpcode { opcode: instructions::Opcode::ASL, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x90 => FullOpcode { opcode: instructions::Opcode::BCC, addressing_mode: AddressingMode::Relative },
+        0xB0 => FullOpcode { opcode: instructions::Opcode::BCS, addressing_mode: AddressingMode::Relative },
+        0xF0 => FullOpcode { opcode: instructions::Opcode::BEQ, addressing_mode: AddressingMode::Relative },
+        0x24 => FullOpcode { opcode: instructions::Opcode::BIT, addressing_mode: AddressingMode::Absolute },
+        0x2C => FullOpcode { opcode: instructions::Opcode::BIT, addressing_mode: AddressingMode::Zeropage },
+        0x30 => FullOpcode { opcode: instructions::Opcode::BMI, addressing_mode: AddressingMode::Relative },
+        0xD0 => FullOpcode { opcode: instructions::Opcode::BNE, addressing_mode: AddressingMode::Relative },
+        0x10 => FullOpcode { opcode: instructions::Opcode::BPL, addressing_mode: AddressingMode::Relative },
+        0x00 => FullOpcode { opcode: instructions::Opcode::BRK, addressing_mode: AddressingMode::Implied },
+        0x50 => FullOpcode { opcode: instructions::Opcode::BVC, addressing_mode: AddressingMode::Relative },
+        0x70 => FullOpcode { opcode: instructions::Opcode::BVS, addressing_mode: AddressingMode::Relative },
+        0x18 => FullOpcode { opcode: instructions::Opcode::CLC, addressing_mode: AddressingMode::Implied },
+        0xD8 => FullOpcode { opcode: instructions::Opcode::CLD, addressing_mode: AddressingMode::Implied },
+        0x58 => FullOpcode { opcode: instructions::Opcode::CLI, addressing_mode: AddressingMode::Implied },
+        0xB8 => FullOpcode { opcode: instructions::Opcode::CLV, addressing_mode: AddressingMode::Implied },
+        0xC9 => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::Immediate },
+        0xC5 => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::Zeropage,},
+        0xD5 => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0xCD => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::Absolute },
+        0xDD => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0xD9 => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0xC1 => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::IndirectXIndexed },
+        0xD1 => FullOpcode { opcode: instructions::Opcode::CMP, addressing_mode: AddressingMode::IndirectYIndexed },
+        0xE0 => FullOpcode { opcode: instructions::Opcode::CPX, addressing_mode: AddressingMode::Immediate },
+        0xE4 => FullOpcode { opcode: instructions::Opcode::CPX, addressing_mode: AddressingMode::Zeropage },
+        0xEC => FullOpcode { opcode: instructions::Opcode::CPX, addressing_mode: AddressingMode::Absolute },
+        0xC0 => FullOpcode { opcode: instructions::Opcode::CPY, addressing_mode: AddressingMode::Immediate },
+        0xC4 => FullOpcode { opcode: instructions::Opcode::CPY, addressing_mode: AddressingMode::Zeropage },
+        0xCC => FullOpcode { opcode: instructions::Opcode::CPY, addressing_mode: AddressingMode::Absolute },
+        0xC6 => FullOpcode { opcode: instructions::Opcode::DEC, addressing_mode: AddressingMode::Zeropage },
+        0xD6 => FullOpcode { opcode: instructions::Opcode::DEC, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0xCE => FullOpcode { opcode: instructions::Opcode::DEC, addressing_mode: AddressingMode::Absolute },
+        0xDE => FullOpcode { opcode: instructions::Opcode::DEC, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0xCA => FullOpcode { opcode: instructions::Opcode::DEX, addressing_mode: AddressingMode::Implied },
+        0x88 => FullOpcode { opcode: instructions::Opcode::DEY, addressing_mode: AddressingMode::Implied },
+        0x49 => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::Immediate },
+        0x45 => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::Zeropage },
+        0x55 => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x4D => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::Absolute },
+        0x5D => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x59 => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0x41 => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::IndirectXIndexed },
+        0x51 => FullOpcode { opcode: instructions::Opcode::EOR, addressing_mode: AddressingMode::IndirectYIndexed },
+        0xE6 => FullOpcode { opcode: instructions::Opcode::INC, addressing_mode: AddressingMode::Zeropage },
+        0xF6 => FullOpcode { opcode: instructions::Opcode::INC, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0xEE => FullOpcode { opcode: instructions::Opcode::INC, addressing_mode: AddressingMode::Absolute },
+        0xFE => FullOpcode { opcode: instructions::Opcode::INC, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0xE8 => FullOpcode { opcode: instructions::Opcode::INX, addressing_mode: AddressingMode::Implied },
+        0xC8 => FullOpcode { opcode: instructions::Opcode::INY, addressing_mode: AddressingMode::Implied },
+        0x4C => FullOpcode { opcode: instructions::Opcode::JMP, addressing_mode: AddressingMode::Absolute },
+        0x6C => FullOpcode { opcode: instructions::Opcode::JMP, addressing_mode: AddressingMode::Indirect },
+        0x20 => FullOpcode { opcode: instructions::Opcode::JSR, addressing_mode: AddressingMode::Absolute },
+        0xA9 => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::Immediate },
+        0xA5 => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::Zeropage },
+        0xB5 => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0xAD => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::Absolute },
+        0xBD => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0xB9 => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0xA1 => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::IndirectXIndexed },
+        0xB1 => FullOpcode { opcode: instructions::Opcode::LDA, addressing_mode: AddressingMode::IndirectYIndexed },
+        0xA2 => FullOpcode { opcode: instructions::Opcode::LDX, addressing_mode: AddressingMode::Immediate },
+        0xA6 => FullOpcode { opcode: instructions::Opcode::LDX, addressing_mode: AddressingMode::Zeropage },
+        0xB6 => FullOpcode { opcode: instructions::Opcode::LDX, addressing_mode: AddressingMode::ZeropageYIndexed },
+        0xAE => FullOpcode { opcode: instructions::Opcode::LDX, addressing_mode: AddressingMode::Absolute },
+        0xBE => FullOpcode { opcode: instructions::Opcode::LDX, addressing_mode: AddressingMode::ZeropageYIndexed },
+        0xA0 => FullOpcode { opcode: instructions::Opcode::LDY, addressing_mode: AddressingMode::Immediate },
+        0xA4 => FullOpcode { opcode: instructions::Opcode::LDY, addressing_mode: AddressingMode::Zeropage },
+        0xB4 => FullOpcode { opcode: instructions::Opcode::LDY, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0xAC => FullOpcode { opcode: instructions::Opcode::LDY, addressing_mode: AddressingMode::Absolute },
+        0xBC => FullOpcode { opcode: instructions::Opcode::LDY, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x4A => FullOpcode { opcode: instructions::Opcode::LSR, addressing_mode: AddressingMode::Accumulator },
+        0x46 => FullOpcode { opcode: instructions::Opcode::LSR, addressing_mode: AddressingMode::Zeropage },
+        0x56 => FullOpcode { opcode: instructions::Opcode::LSR, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x4E => FullOpcode { opcode: instructions::Opcode::LSR, addressing_mode: AddressingMode::Absolute },
+        0x5E => FullOpcode { opcode: instructions::Opcode::LSR, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0xEA => FullOpcode { opcode: instructions::Opcode::NOP, addressing_mode: AddressingMode::Implied },
+        0x09 => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::Immediate },
+        0x05 => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::Zeropage },
+        0x15 => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x0D => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::Absolute },
+        0x1D => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x19 => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0x01 => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::IndirectXIndexed },
+        0x11 => FullOpcode { opcode: instructions::Opcode::ORA, addressing_mode: AddressingMode::IndirectYIndexed },
+        0x48 => FullOpcode { opcode: instructions::Opcode::PHA, addressing_mode: AddressingMode::Implied },
+        0x08 => FullOpcode { opcode: instructions::Opcode::PHP, addressing_mode: AddressingMode::Implied },
+        0x68 => FullOpcode { opcode: instructions::Opcode::PLA, addressing_mode: AddressingMode::Implied },
+        0x28 => FullOpcode { opcode: instructions::Opcode::PLP, addressing_mode: AddressingMode::Implied },
+        0x2A => FullOpcode { opcode: instructions::Opcode::ROL, addressing_mode: AddressingMode::Accumulator },
+        0x26 => FullOpcode { opcode: instructions::Opcode::ROL, addressing_mode: AddressingMode::Zeropage },
+        0x36 => FullOpcode { opcode: instructions::Opcode::ROL, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x2E => FullOpcode { opcode: instructions::Opcode::ROL, addressing_mode: AddressingMode::Absolute },
+        0x3E => FullOpcode { opcode: instructions::Opcode::ROL, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x6A => FullOpcode { opcode: instructions::Opcode::ROR, addressing_mode: AddressingMode::Accumulator },
+        0x66 => FullOpcode { opcode: instructions::Opcode::ROR, addressing_mode: AddressingMode::Zeropage },
+        0x76 => FullOpcode { opcode: instructions::Opcode::ROR, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x6E => FullOpcode { opcode: instructions::Opcode::ROR, addressing_mode: AddressingMode::Absolute },
+        0x7E => FullOpcode { opcode: instructions::Opcode::ROR, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x40 => FullOpcode { opcode: instructions::Opcode::RTI, addressing_mode: AddressingMode::Implied },
+        0x60 => FullOpcode { opcode: instructions::Opcode::RTS, addressing_mode: AddressingMode::Implied },
+        0xE9 => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::Immediate },
+        0xE5 => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::Zeropage },
+        0xF5 => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0xED => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::Absolute },
+        0xFD => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0xF9 => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0xE1 => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::IndirectXIndexed },
+        0xF1 => FullOpcode { opcode: instructions::Opcode::SBC, addressing_mode: AddressingMode::IndirectYIndexed },
+        0x38 => FullOpcode { opcode: instructions::Opcode::SEC, addressing_mode: AddressingMode::Implied },
+        0xF8 => FullOpcode { opcode: instructions::Opcode::SED, addressing_mode: AddressingMode::Implied },
+        0x78 => FullOpcode { opcode: instructions::Opcode::SEI, addressing_mode: AddressingMode::Implied },
+        0x85 => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::Zeropage },
+        0x95 => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x8D => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::Absolute },
+        0x9D => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::AbsoluteXIndexed },
+        0x99 => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::AbsoluteYIndexed },
+        0x81 => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::IndirectXIndexed },
+        0x91 => FullOpcode { opcode: instructions::Opcode::STA, addressing_mode: AddressingMode::IndirectYIndexed },
+        0x86 => FullOpcode { opcode: instructions::Opcode::STX, addressing_mode: AddressingMode::Zeropage },
+        0x96 => FullOpcode { opcode: instructions::Opcode::STX, addressing_mode: AddressingMode::ZeropageYIndexed },
+        0x8E => FullOpcode { opcode: instructions::Opcode::STX, addressing_mode: AddressingMode::Absolute },
+        0x84 => FullOpcode { opcode: instructions::Opcode::STY, addressing_mode: AddressingMode::Zeropage },
+        0x94 => FullOpcode { opcode: instructions::Opcode::STY, addressing_mode: AddressingMode::ZeropageXIndexed },
+        0x8C => FullOpcode { opcode: instructions::Opcode::STY, addressing_mode: AddressingMode::Absolute },
+        0xAA => FullOpcode { opcode: instructions::Opcode::TAX, addressing_mode: AddressingMode::Implied },
+        0xA8 => FullOpcode { opcode: instructions::Opcode::TAX, addressing_mode: AddressingMode::Implied },
+        0xBA => FullOpcode { opcode: instructions::Opcode::TAX, addressing_mode: AddressingMode::Implied },
+        0x8A => FullOpcode { opcode: instructions::Opcode::TAX, addressing_mode: AddressingMode::Implied },
+        0x9A => FullOpcode { opcode: instructions::Opcode::TAX, addressing_mode: AddressingMode::Implied },
+        0x98 => FullOpcode { opcode: instructions::Opcode::TAX, addressing_mode: AddressingMode::Implied },
+        _ => unimplemented!()
     }
-} */
+} 
 
 #[cfg(test)]
 mod test {
