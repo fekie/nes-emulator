@@ -29,14 +29,16 @@ const TARGET_FPS: usize = 60;
 
 pub mod bus;
 pub mod cartridge;
-pub mod cpu;
-pub mod ines;
-pub mod ppu;
+#[allow(clippy::new_without_default)]
+mod cpu;
+mod debug;
+mod ines;
+mod ppu;
 
 pub trait Mapper {
-    fn read(&self, address: u16) -> u8;
+    fn read(&self, bus: &Bus, address: u16) -> u8;
 
-    fn write(&mut self, address: u16, byte: u8);
+    fn write(&mut self, bus: &Bus, address: u16, byte: u8);
 }
 
 pub trait ClockableMapper {
