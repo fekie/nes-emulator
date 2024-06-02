@@ -1,10 +1,17 @@
 use instructions::{AddressingMode, FullOpcode, Instruction};
 
+use crate::bus::Bus;
 use crate::cartridge::Cartridge;
 use crate::ppu::PPU;
 use crate::Mapper;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::str::Bytes;
+
+const STACK_POINTER_STARTING_VALUE: u8 = 0xFD;
+const NMI_VECTOR_ADDRESS: u16 = 0xFFFA;
+const RESET_VECTOR_ADDRESS: u16 = 0xFFFC;
+const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 
 mod instructions;
 #[derive(Debug, Clone, Copy, Default)]
@@ -141,22 +148,34 @@ pub struct CPU {
 impl CPU {
     /// Creates a new CPU and initializes it to its startup state.
     pub fn new() -> Self {
-        todo!();
+        let mut processor_status = ProcessorStatus(0);
+        processor_status.set_interrupt_disable_flag();
+
+        Self {
+            accumulator_register: 0,
+            x_register: 0,
+            y_register: 0,
+            stack_pointer: STACK_POINTER_STARTING_VALUE,
+            program_counter: NMI_VECTOR_ADDRESS,
+            registers: [0; 6],
+            processor_status,
+            memory_mapper: CpuMemoryMapper::new(),
+        }
     }
 
     /// Runs a full instruction cycle. Returns the amount of
     /// machine cycles taken.
-    pub fn cycle(&mut self, ppu: &mut PPU) -> u8 {
+    pub fn cycle(&mut self, bus: &Bus) -> u8 {
         // fetch + decode
-        let instruction = self.fetch();
+        let instruction = self.fetch(bus);
         // execute
         let machine_cycles_taken = todo!();
         machine_cycles_taken
     }
 
     /// Fetches the next instruction and updates the program counter.
-    pub fn fetch(&mut self) -> Instruction {
-        let full_opcode = FullOpcode::new(self.memory_mapper.read(self.program_counter));
+    pub fn fetch(&mut self, bus: &Bus) -> Instruction {
+        let full_opcode = FullOpcode::new(self.memory_mapper.read(bus, self.program_counter));
 
         // Low byte comes first as words are in little-endian
         let (low_byte, high_byte) = match full_opcode.addressing_mode {
@@ -169,15 +188,15 @@ impl CPU {
             | AddressingMode::Zeropage
             | AddressingMode::ZeropageXIndexed
             | AddressingMode::ZeropageYIndexed => (
-                Some(self.memory_mapper.read(self.program_counter + 1)),
+                Some(self.memory_mapper.read(bus, self.program_counter + 1)),
                 None,
             ),
             //
             AddressingMode::Absolute
             | AddressingMode::AbsoluteXIndexed
             | AddressingMode::AbsoluteYIndexed => (
-                Some(self.memory_mapper.read(self.program_counter + 1)),
-                Some(self.memory_mapper.read(self.program_counter + 2)),
+                Some(self.memory_mapper.read(bus, self.program_counter + 1)),
+                Some(self.memory_mapper.read(bus, self.program_counter + 2)),
             ),
         };
 
@@ -199,6 +218,7 @@ impl CPU {
 }
 
 // We use 2KB of work ram.
+#[derive(Debug)]
 pub struct WorkRAM([u8; 0x800]);
 
 /// Memory Map:
@@ -216,29 +236,36 @@ pub struct WorkRAM([u8; 0x800]);
 /// | $4020–$FFFF   | $BFE0  | Unmapped. Available for cartridge use.                                   |   |   |
 /// | *$6000-$7FFF  | $2000  | Usually cartridge RAM, when present.                                     |   |   |
 /// | *$8000-$FFFF  | $8000  | Usually cartridge ROM and mapper registers.                              |   |   |
+#[derive(Debug)]
 pub struct CpuMemoryMapper {
     work_ram: WorkRAM,
-    cartridge: Rc<RefCell<Cartridge>>,
-    ppu: Rc<RefCell<PPU>>,
+}
+
+impl CpuMemoryMapper {
+    pub fn new() -> Self {
+        Self {
+            work_ram: WorkRAM([0; 2048]),
+        }
+    }
 }
 
 impl Mapper for CpuMemoryMapper {
-    fn read(&self, address: u16) -> u8 {
+    fn read(&self, bus: &Bus, address: u16) -> u8 {
         match address {
             // Handle the work RAM and the mirrors.
             0x0000..=0x1FFF => self.work_ram.0[address as usize % 0x0800],
             // Handle PPU registers and the mirrors.
-            0x2000..=0x3FFF => self.ppu.borrow().registers[((address - 0x2000) % 8) as usize],
+            0x2000..=0x3FFF => bus.ppu.borrow_mut().registers[((address - 0x2000) % 8) as usize],
             // Saved for APU
             0x4000..=0x4017 => unimplemented!(),
             // Disabled
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
-            0x4020..=0xFFFF => self.cartridge.borrow().read(address),
+            0x4020..=0xFFFF => bus.cartridge.borrow().read(address),
         }
     }
 
-    fn write(&mut self, address: u16, byte: u8) {
+    fn write(&mut self, bus: &Bus, address: u16, byte: u8) {
         todo!()
     }
 }

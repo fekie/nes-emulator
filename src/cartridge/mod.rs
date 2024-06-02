@@ -48,16 +48,14 @@ impl NROM {
 
 impl ClockableMapper for NROM {
     fn read(&self, address: u16) -> u8 {
-        todo!();
         self.program_rom[address as usize - 0x8000]
     }
 
     fn write(&mut self, address: u16, byte: u8) {
-        todo!();
         self.program_rom[address as usize - 0x8000] = byte;
     }
 
-    fn clock(&mut self, interrupts: &Interrupts) {
+    fn clock(&mut self, _interrupts: &Interrupts) {
         // NROM doesnt interact so we do nothing
     }
 }
