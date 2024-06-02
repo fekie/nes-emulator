@@ -1,44 +1,58 @@
 #![allow(non_snake_case)]
 #![allow(clippy::upper_case_acronyms)]
 
+use std::default;
+
 use super::CPU;
 
-//https://emudev.de/nes-emulator/opcodes-and-addressing-modes-the-6502/   <-- good stuff
-//https://blogs.oregonstate.edu/ericmorgan/2022/01/21/6502-addressing-modes/  <--- also this too
-#[derive(Clone, Copy)]
+mod full_opcode_parsing;
+
+// https://emudev.de/nes-emulator/opcodes-and-addressing-modes-the-6502/   <-- good stuff
+// https://blogs.oregonstate.edu/ericmorgan/2022/01/21/6502-addressing-modes/  <--- also this too
+// https://www.masswerk.at/6502/6502_instruction_set.html#LDY <-- and here!
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default, Copy)]
 pub enum AddressingMode {
-    Relative,
     Accumulator,
-    Immediate,
-    Implied,
-    Zeropage,
-    ZeropageXIndexed,
-    ZeropageYIndexed,
-    IndirectXIndexed,
-    IndirectYIndexed,
     Absolute,
     AbsoluteXIndexed,
     AbsoluteYIndexed,
+    Immediate,
+    #[default]
+    Implied,
+    Indirect,
+    IndirectXIndexed,
+    IndirectYIndexed,
+    Relative,
+    Zeropage,
+    ZeropageXIndexed,
+    ZeropageYIndexed,
 }
 
 impl AddressingMode {
     /// Each instruction will require 1-3 bytes in total.
     /// This includes the opcode byte.
     pub fn bytes_required(&self) -> u16 {
-        todo!()
+        match self {
+            AddressingMode::Accumulator | AddressingMode::Implied => 1,
+            //
+            AddressingMode::Immediate
+            | AddressingMode::IndirectXIndexed
+            | AddressingMode::IndirectYIndexed
+            | AddressingMode::Relative
+            | AddressingMode::Zeropage
+            | AddressingMode::ZeropageXIndexed
+            | AddressingMode::ZeropageYIndexed => 2,
+            //
+            AddressingMode::Absolute
+            | AddressingMode::AbsoluteXIndexed
+            | AddressingMode::AbsoluteYIndexed
+            | AddressingMode::Indirect => 3,
+        }
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default, Copy)]
 pub enum Opcode {
-    /// High Nibble | Low Nibble | Addressing Mode
-    /// 0x6 | 0x1 | indirect, x-indexed
-    /// 0x6 | 0x5 | zero-page
-    /// 0x6 | 0x9 | immediate
-    /// 0x6 | 0xD | absolute
-    /// 0x7 | 0x1 | indirect, y-indexed
-    /// 0x7 | 0x5 | zero-page, x-indexed
-    /// 0x7 | 0x9 | absolute, y-indexed
-    /// 0x7 | 0xD | absolute, x-indexed
     ADC,
     AND,
     ASL,
@@ -72,6 +86,7 @@ pub enum Opcode {
     LDX,
     LDY,
     LSR,
+    #[default]
     NOP,
     ORA,
     PHA,
@@ -81,7 +96,7 @@ pub enum Opcode {
     ROL,
     ROR,
     RTI,
-    RTD,
+    RTS,
     SBC,
     SEC,
     SED,
@@ -99,6 +114,7 @@ pub enum Opcode {
 
 /// Includes both the opcode and the addressing mode from
 /// the opcode byte.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct FullOpcode {
     pub opcode: Opcode,
     pub addressing_mode: AddressingMode,
@@ -174,12 +190,8 @@ pub struct FullOpcode {
     }
 }
  */
-impl FullOpcode {
-    pub fn new(byte: u8) -> Self {
-        todo!()
-    }
-}
 
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct Instruction {
     pub opcode: Opcode,
     pub addressing_mode: AddressingMode,

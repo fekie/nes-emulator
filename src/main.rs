@@ -30,9 +30,10 @@ const TARGET_FPS: usize = 60;
 pub mod bus;
 pub mod cartridge;
 #[allow(clippy::new_without_default)]
-pub mod cpu;
-pub mod ines;
-pub mod ppu;
+mod cpu;
+mod debug;
+mod ines;
+mod ppu;
 
 pub trait Mapper {
     fn read(&self, bus: &Bus, address: u16) -> u8;

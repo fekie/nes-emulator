@@ -1,5 +1,6 @@
 use instructions::{AddressingMode, FullOpcode, Instruction};
 
+use super::debug;
 use crate::bus::Bus;
 use crate::cartridge::Cartridge;
 use crate::ppu::PPU;
@@ -168,6 +169,8 @@ impl CPU {
     pub fn cycle(&mut self, bus: &Bus) -> u8 {
         // fetch + decode
         let instruction = self.fetch(bus);
+        dbg!(instruction);
+        //debug::hex_print_byte(byte);
         // execute
         let machine_cycles_taken = todo!();
         machine_cycles_taken
@@ -177,31 +180,24 @@ impl CPU {
     pub fn fetch(&mut self, bus: &Bus) -> Instruction {
         let full_opcode = FullOpcode::new(self.memory_mapper.read(bus, self.program_counter));
 
+        let bytes_required = full_opcode.addressing_mode.bytes_required();
+
         // Low byte comes first as words are in little-endian
-        let (low_byte, high_byte) = match full_opcode.addressing_mode {
-            AddressingMode::Accumulator | AddressingMode::Implied => (None, None),
-            //
-            AddressingMode::Immediate
-            | AddressingMode::IndirectXIndexed
-            | AddressingMode::IndirectYIndexed
-            | AddressingMode::Relative
-            | AddressingMode::Zeropage
-            | AddressingMode::ZeropageXIndexed
-            | AddressingMode::ZeropageYIndexed => (
+        let (low_byte, high_byte) = match bytes_required {
+            1 => (None, None),
+            2 => (
                 Some(self.memory_mapper.read(bus, self.program_counter + 1)),
                 None,
             ),
-            //
-            AddressingMode::Absolute
-            | AddressingMode::AbsoluteXIndexed
-            | AddressingMode::AbsoluteYIndexed => (
+            3 => (
                 Some(self.memory_mapper.read(bus, self.program_counter + 1)),
                 Some(self.memory_mapper.read(bus, self.program_counter + 2)),
             ),
+            _ => unreachable!(),
         };
 
         // Decide how much we need to increment the PC
-        self.program_counter += full_opcode.addressing_mode.bytes_required();
+        self.program_counter += bytes_required;
 
         Instruction {
             opcode: full_opcode.opcode,
