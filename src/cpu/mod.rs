@@ -13,9 +13,9 @@ mod instructions;
 mod processor_status;
 
 pub struct CPU {
-    accumulator_register: u8,
-    x_register: u8,
-    y_register: u8,
+    accumulator: u8,
+    x: u8,
+    y: u8,
     stack_pointer: u8,
     program_counter: u16,
     registers: [u8; 6],
@@ -29,9 +29,9 @@ impl CPU {
     /// to the bus to initialize. You can initialize it with [`Self::initialize`].
     pub fn new() -> Self {
         Self {
-            accumulator_register: 0,
-            x_register: 0,
-            y_register: 0,
+            accumulator: 0,
+            x: 0,
+            y: 0,
             stack_pointer: STACK_POINTER_STARTING_VALUE,
             program_counter: 0,
             registers: [0; 6],
@@ -72,9 +72,11 @@ impl CPU {
         // fetch + decode
         let instruction = self.fetch(bus);
         dbg!(instruction);
+
+        self.pretty_print_cpu_state(instruction);
+
         // execute
-        let machine_cycles_taken = todo!();
-        machine_cycles_taken
+        self.execute(instruction)
     }
 
     /// Fetches the next instruction and updates the program counter.
@@ -111,6 +113,31 @@ impl CPU {
     /// Executes the instruction and returns the amount of machine cycles that it took.
     pub fn execute(&mut self, instruction: Instruction) -> u8 {
         todo!()
+    }
+
+    #[allow(dead_code)]
+    /// Pretty prints the full state of the CPU. Meant to be used after fetch but
+    /// before execution to work correctly.
+    pub fn pretty_print_cpu_state(&self, instruction: Instruction) {
+        println!("------------------");
+        println!("New PC: ${:02X}", self.program_counter);
+        println!("Instruction (not yet executed): {:#?}", instruction);
+        println!("Accumulator: {}", self.accumulator);
+        println!("X: {}", self.x);
+        println!("Y: {}", self.y);
+        println!("Stack Pointer: ${:02X}", self.stack_pointer);
+        println!("Registers: {:?}", self.registers);
+        println!("Carry: {}", self.processor_status.carry_flag());
+        println!("Zero: {}", self.processor_status.zero_flag());
+        println!(
+            "Interrupt Disable: {}",
+            self.processor_status.interrupt_disable_flag()
+        );
+        println!("Decimal: {}", self.processor_status.decimal_flag());
+        println!("Break: {}", self.processor_status.break_flag());
+        println!("Overflow: {}", self.processor_status.overflow_flag());
+        println!("Negative: {}", self.processor_status.negative_flag());
+        println!("------------------");
     }
 }
 
