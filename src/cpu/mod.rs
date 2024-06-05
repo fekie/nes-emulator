@@ -119,25 +119,19 @@ impl CPU {
     /// Pretty prints the full state of the CPU. Meant to be used after fetch but
     /// before execution to work correctly.
     pub fn pretty_print_cpu_state(&self, instruction: Instruction) {
-        println!("------------------");
+        println!("------------------------------------");
         println!("New PC: ${:02X}", self.program_counter);
         println!("Instruction (not yet executed): {:#?}", instruction);
-        println!("Accumulator: {}", self.accumulator);
-        println!("X: {}", self.x);
-        println!("Y: {}", self.y);
-        println!("Stack Pointer: ${:02X}", self.stack_pointer);
+        println!("Accumulator: {} | X: {} | Y: {}", self.accumulator, self.x, self.y);
+        println!("Stack Pointer: ${:02X} -> ${:04X}", self.stack_pointer, self.stack_pointer as u16 + 0x0100);
         println!("Registers: {:?}", self.registers);
-        println!("Carry: {}", self.processor_status.carry_flag());
-        println!("Zero: {}", self.processor_status.zero_flag());
         println!(
-            "Interrupt Disable: {}",
-            self.processor_status.interrupt_disable_flag()
+            "Carry: {} | Zero: {} | Interrupt Disable: {} | Decimal: {} | Break: {} | Overflow: {} | Negative: {}",
+            self.processor_status.carry_flag(), self.processor_status.zero_flag(), self.processor_status.interrupt_disable_flag(), 
+            self.processor_status.decimal_flag(), self.processor_status.break_flag(), self.processor_status.overflow_flag(), 
+            self.processor_status.negative_flag()
         );
-        println!("Decimal: {}", self.processor_status.decimal_flag());
-        println!("Break: {}", self.processor_status.break_flag());
-        println!("Overflow: {}", self.processor_status.overflow_flag());
-        println!("Negative: {}", self.processor_status.negative_flag());
-        println!("------------------");
+        println!("------------------------------------");
     }
 }
 
