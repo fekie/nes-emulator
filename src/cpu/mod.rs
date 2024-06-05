@@ -35,7 +35,7 @@ impl CPU {
             stack_pointer: STACK_POINTER_STARTING_VALUE,
             program_counter: 0,
             registers: [0; 6],
-            processor_status: ProcessorStatus::default(),
+            processor_status: ProcessorStatus::new(),
             memory_mapper: CpuMemoryMapper::new(),
             initialized: false,
         }
