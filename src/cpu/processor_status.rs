@@ -130,7 +130,7 @@ mod test {
 
     #[test]
     fn test_carry() {
-        let mut flag_reg = ProcessorStatus::default();
+        let mut flag_reg = ProcessorStatus::new();
         assert!(!flag_reg.carry_flag());
 
         flag_reg.set_carry_flag();
@@ -143,7 +143,7 @@ mod test {
 
     #[test]
     fn test_zero() {
-        let mut flag_reg = ProcessorStatus::default();
+        let mut flag_reg = ProcessorStatus::new();
         assert!(!flag_reg.zero_flag());
 
         flag_reg.set_zero_flag();
@@ -156,7 +156,7 @@ mod test {
 
     #[test]
     fn test_interrupt_disable() {
-        let mut flag_reg = ProcessorStatus::default();
+        let mut flag_reg = ProcessorStatus::new();
         assert!(!flag_reg.interrupt_disable_flag());
 
         flag_reg.set_interrupt_disable_flag();
@@ -168,7 +168,7 @@ mod test {
 
     #[test]
     fn test_decimal() {
-        let mut flag_reg = ProcessorStatus::default();
+        let mut flag_reg = ProcessorStatus::new();
         assert!(!flag_reg.decimal_flag());
 
         flag_reg.set_decimal_flag();
@@ -180,7 +180,7 @@ mod test {
 
     #[test]
     fn test_overflow() {
-        let mut flag_reg = ProcessorStatus::default();
+        let mut flag_reg = ProcessorStatus::new();
         assert!(!flag_reg.overflow_flag());
 
         flag_reg.set_overflow_flag();
@@ -192,7 +192,7 @@ mod test {
 
     #[test]
     fn test_neg() {
-        let mut flag_reg = ProcessorStatus::default();
+        let mut flag_reg = ProcessorStatus::new();
         assert!(!flag_reg.negative_flag());
 
         flag_reg.set_negative_flag();
