@@ -1,8 +1,6 @@
 #![allow(non_snake_case)]
 #![allow(clippy::upper_case_acronyms)]
 
-use std::default;
-
 use super::CPU;
 
 mod full_opcode_parsing;

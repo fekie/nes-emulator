@@ -3,7 +3,6 @@ use crate::bus::Interrupts;
 use bus::Bus;
 use cartridge::Cartridge;
 use clap::Parser;
-use cpu::CPU;
 use ines::Ines;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
@@ -27,8 +26,9 @@ const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
 
 const TARGET_FPS: usize = 60;
 
-pub mod bus;
-pub mod cartridge;
+mod apu;
+mod bus;
+mod cartridge;
 #[allow(clippy::new_without_default)]
 mod cpu;
 mod debug;
@@ -47,6 +47,12 @@ pub trait ClockableMapper {
     fn write(&mut self, address: u16, byte: u8);
 
     fn clock(&mut self, interrupts: &Interrupts);
+
+    /// Initialize the APU.
+    fn initialize(&mut self);
+
+    /// Returns the state of initialization.
+    fn initialized(&self) -> bool;
 }
 
 pub struct MapperType {}
@@ -83,6 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let cartridge: Cartridge = rom.into();
 
         let mut bus = Bus::new(cartridge);
+        bus.initialize();
 
         // If we execute an instruction and it takes more cycles than we have available,
         // then we store the amount here (as a negative number) that we need to take off.

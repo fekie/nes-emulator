@@ -1,30 +1,43 @@
-use crate::cartridge::{self, Cartridge};
-use crate::cpu::CpuMemoryMapper;
+use crate::apu::APU;
+use crate::cartridge::Cartridge;
+use crate::cpu::CPU;
 use crate::ppu::PPU;
-use crate::CPU;
 use std::cell::RefCell;
-use std::default;
 use std::rc::Rc;
 
 const PPU_CLOCK_DIVISOR: u8 = 4;
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone)]
 pub enum Request {
     Active,
-    #[default]
     Inactive,
 }
 
 /// Wraps over internally mutatable interrupt states.
-#[derive(Default)]
 pub struct Interrupts {
     interrupt: Rc<RefCell<Request>>,
     non_maskable_interrupt: Rc<RefCell<Request>>,
+    initialized: bool,
 }
 
 impl Interrupts {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            interrupt: Rc::new(RefCell::new(Request::Inactive)),
+            non_maskable_interrupt: Rc::new(RefCell::new(Request::Inactive)),
+            initialized: false,
+        }
+    }
+
+    /// Initialize the APU.
+    pub fn initialize(&mut self, _bus: &Bus) {
+        // already initialized in new()
+        self.initialized = true;
+    }
+
+    /// Returns the state of initialization.
+    pub fn initialized(&self) -> bool {
+        self.initialized
     }
 
     pub fn interrupt_state(&self) -> Request {
@@ -47,6 +60,7 @@ impl Interrupts {
 pub struct Bus {
     pub cpu: Rc<RefCell<CPU>>,
     pub ppu: Rc<RefCell<PPU>>,
+    pub apu: Rc<RefCell<APU>>,
     // todo: add APU later
     // Cartridge can sometimes interact with the cpu and apu
     // and it needs to be clocked just like
@@ -56,23 +70,50 @@ pub struct Bus {
     /// to be able to keep the PPU in sync as it needs to tick on every
     /// 4th machine cycle.
     pub current_machine_cycles: u8,
+    pub initialized: bool,
 }
 
 impl Bus {
+    /// Creates the bus and the devices on it but does not initialize them.
     pub fn new(cartridge: Cartridge) -> Self {
         let cpu = Rc::new(RefCell::new(CPU::new()));
         let ppu = Rc::new(RefCell::new(PPU::new()));
+        let apu = Rc::new(RefCell::new(APU::new()));
         let cartridge = Rc::new(RefCell::new(cartridge));
         let interrupts = Rc::new(RefCell::new(Interrupts::new()));
         let current_machine_cycles = 0;
+        let initialized = false;
 
         Self {
             cpu,
             ppu,
+            apu,
             cartridge,
             interrupts,
             current_machine_cycles,
+            initialized,
         }
+    }
+
+    pub fn initialize(&mut self) {
+        // We go ahead and explicitly initialize everything,
+        // even if under the hood it doesnt change any values.
+        // This allows us to be sure that we're initializing anything,
+        // and allows for us to be able to add initialization behavior
+        // later if needed.
+        self.cpu.borrow_mut().initialize(self);
+        self.ppu.borrow_mut().initialize(self);
+        self.apu.borrow_mut().initialize(self);
+        self.cartridge.borrow_mut().initialize(self);
+        self.interrupts.borrow_mut().initialize(self);
+
+        assert!(self.cpu.borrow().initialized());
+        assert!(self.ppu.borrow().initialized());
+        assert!(self.apu.borrow().initialized());
+        assert!(self.cartridge.borrow().initialized());
+        assert!(self.interrupts.borrow().initialized());
+
+        self.initialized = true;
     }
 }
 
@@ -80,11 +121,10 @@ impl Bus {
     /// Runs one cycle of the cpu and returns how many cpu cycles it took.
     /// CPU cycles can be converted to clock cycles by multiplying by 12.
     pub fn clock_cpu(&self) -> u8 {
-        self.cpu.borrow_mut().cycle(&self);
-        todo!()
+        self.cpu.borrow_mut().cycle(self)
     }
 
-    /// Clocks all the devices on the bus, such as the PPU, APU, and Cartridge
+    /// Clocks all the devices on the bus except for the cpu, such as the PPU, APU, and Cartridge
     pub fn clock_bus(&mut self, additional_machine_cycles: u8) {
         for _ in 0..additional_machine_cycles {
             // clock ppu every 4 cycles

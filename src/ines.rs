@@ -35,7 +35,7 @@ impl Ines {
         let program_rom_size = program_rom_size_multiplier as usize * KB * 16;
         let character_rom_size = character_rom_size_multiplier as usize * KB * 8;
 
-        let program_rom = bytes[HEADER_BYTES..program_rom_size].to_vec();
+        let program_rom = bytes[HEADER_BYTES..program_rom_size + HEADER_BYTES].to_vec();
         let character_rom = bytes
             [HEADER_BYTES + program_rom_size..HEADER_BYTES + program_rom_size + character_rom_size]
             .to_vec();
