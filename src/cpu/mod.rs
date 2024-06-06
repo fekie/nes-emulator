@@ -1,4 +1,4 @@
-use instructions::{FullOpcode, Instruction};
+use instruction::{FullOpcode, Instruction, Opcode};
 
 use crate::bus::Bus;
 use crate::Mapper;
@@ -9,7 +9,8 @@ pub const NMI_VECTOR_ADDRESS: u16 = 0xFFFA;
 pub const RESET_VECTOR_ADDRESS: u16 = 0xFFFC;
 pub const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 
-mod instructions;
+mod execution;
+mod instruction;
 mod processor_status;
 
 pub struct CPU {
@@ -76,7 +77,7 @@ impl CPU {
         self.pretty_print_cpu_state(instruction);
 
         // execute
-        self.execute(instruction)
+        self.execute(instruction, bus)
     }
 
     /// Fetches the next instruction and updates the program counter.
@@ -111,8 +112,11 @@ impl CPU {
     }
 
     /// Executes the instruction and returns the amount of machine cycles that it took.
-    pub fn execute(&mut self, instruction: Instruction) -> u8 {
-        todo!()
+    pub fn execute(&mut self, instruction: Instruction, bus: &Bus) -> u8 {
+        match instruction.opcode {
+            Opcode::SEI => self.instruction_sei(bus, instruction.addressing_mode),
+            _ => unimplemented!("Instruction not implemented.")
+        }
     }
 
     #[allow(dead_code)]

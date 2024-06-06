@@ -21,6 +21,7 @@ pub struct Interrupts {
 }
 
 impl Interrupts {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             interrupt: Rc::new(RefCell::new(Request::Inactive)),
