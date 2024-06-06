@@ -6,10 +6,6 @@ use clap::Parser;
 use ines::Ines;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
-use ppu::PPU;
-use std::borrow::{Borrow, BorrowMut};
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::thread::spawn;
 use std::time::Instant;
 

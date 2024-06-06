@@ -1,5 +1,6 @@
 use crate::bus::Bus;
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct APU {
     initialized: bool,
 }
@@ -15,7 +16,7 @@ impl APU {
 
 impl APU {
     /// Initialize the APU.
-    pub fn initialize(&mut self, bus: &Bus) {
+    pub fn initialize(&mut self) {
         self.initialized = true;
     }
 

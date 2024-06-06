@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 const PPU_CLOCK_DIVISOR: u8 = 4;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Request {
     Active,
     Inactive,
@@ -15,12 +15,13 @@ pub enum Request {
 
 /// Wraps over internally mutatable interrupt states.
 pub struct Interrupts {
-    interrupt: Rc<RefCell<Request>>,
-    non_maskable_interrupt: Rc<RefCell<Request>>,
-    initialized: bool,
+    pub interrupt: Rc<RefCell<Request>>,
+    pub non_maskable_interrupt: Rc<RefCell<Request>>,
+    pub initialized: bool,
 }
 
 impl Interrupts {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             interrupt: Rc::new(RefCell::new(Request::Inactive)),
@@ -30,7 +31,7 @@ impl Interrupts {
     }
 
     /// Initialize the APU.
-    pub fn initialize(&mut self, _bus: &Bus) {
+    pub fn initialize(&mut self) {
         // already initialized in new()
         self.initialized = true;
     }
@@ -97,15 +98,15 @@ impl Bus {
 
     pub fn initialize(&mut self) {
         // We go ahead and explicitly initialize everything,
-        // even if under the hood it doesnt change any values.
+        // even if under the hood it doesn't change any values.
         // This allows us to be sure that we're initializing anything,
         // and allows for us to be able to add initialization behavior
         // later if needed.
         self.cpu.borrow_mut().initialize(self);
-        self.ppu.borrow_mut().initialize(self);
-        self.apu.borrow_mut().initialize(self);
-        self.cartridge.borrow_mut().initialize(self);
-        self.interrupts.borrow_mut().initialize(self);
+        self.ppu.borrow_mut().initialize();
+        self.apu.borrow_mut().initialize();
+        self.cartridge.borrow_mut().initialize();
+        self.interrupts.borrow_mut().initialize();
 
         assert!(self.cpu.borrow().initialized());
         assert!(self.ppu.borrow().initialized());

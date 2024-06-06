@@ -1,4 +1,4 @@
-use instructions::{FullOpcode, Instruction};
+use instruction::{FullOpcode, Instruction, Opcode};
 
 use crate::bus::Bus;
 use crate::Mapper;
@@ -9,13 +9,14 @@ pub const NMI_VECTOR_ADDRESS: u16 = 0xFFFA;
 pub const RESET_VECTOR_ADDRESS: u16 = 0xFFFC;
 pub const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 
-mod instructions;
+mod execution;
+mod instruction;
 mod processor_status;
 
 pub struct CPU {
-    accumulator_register: u8,
-    x_register: u8,
-    y_register: u8,
+    accumulator: u8,
+    x: u8,
+    y: u8,
     stack_pointer: u8,
     program_counter: u16,
     registers: [u8; 6],
@@ -29,9 +30,9 @@ impl CPU {
     /// to the bus to initialize. You can initialize it with [`Self::initialize`].
     pub fn new() -> Self {
         Self {
-            accumulator_register: 0,
-            x_register: 0,
-            y_register: 0,
+            accumulator: 0,
+            x: 0,
+            y: 0,
             stack_pointer: STACK_POINTER_STARTING_VALUE,
             program_counter: 0,
             registers: [0; 6],
@@ -69,12 +70,17 @@ impl CPU {
     /// Runs a full instruction cycle. Returns the amount of
     /// machine cycles taken.
     pub fn cycle(&mut self, bus: &Bus) -> u8 {
-        // fetch + decode
+        // check for interrupts
+        /* if *bus.interrupts.borrow().interrupt.borrow() == Request::Active || *bus.interrupts.borrow().non_maskable_interrupt.borrow() == Request::Active {
+            // if we get an interrupt, then set the previous pc back
+
+        } */
+        // fetch
         let instruction = self.fetch(bus);
-        dbg!(instruction);
+        self.pretty_print_cpu_state(instruction);
+
         // execute
-        let machine_cycles_taken = todo!();
-        machine_cycles_taken
+        self.execute(instruction, bus)
     }
 
     /// Fetches the next instruction and updates the program counter.
@@ -109,8 +115,42 @@ impl CPU {
     }
 
     /// Executes the instruction and returns the amount of machine cycles that it took.
-    pub fn execute(&mut self, instruction: Instruction) -> u8 {
-        todo!()
+    pub fn execute(&mut self, instruction: Instruction, bus: &Bus) -> u8 {
+        match instruction.opcode {
+            Opcode::SEI => self.instruction_sei(),
+            Opcode::CLD => self.instruction_cld(),
+            Opcode::LDA => self.instruction_lda(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            _ => unimplemented!("Instruction not implemented.")
+        }
+    }
+
+    // Shortcuts to read a byte from the memory mapper because
+    // we use this a lot.
+    pub(in crate::cpu) fn read(&self, bus: &Bus, address: u16) -> u8 {
+        self.memory_mapper.read(bus, address)
+    }
+
+    pub(in crate::cpu) fn write(&mut self, bus: &Bus, address: u16, byte: u8)  {
+        self.memory_mapper.write(bus, address, byte);
+    }
+
+    #[allow(dead_code)]
+    /// Pretty prints the full state of the CPU. Meant to be used after fetch but
+    /// before execution to work correctly.
+    pub fn pretty_print_cpu_state(&self, instruction: Instruction) {
+        println!("------------------------------------");
+        println!("New PC: ${:02X}", self.program_counter);
+        println!("Instruction (not yet executed): {:#?}", instruction);
+        println!("Accumulator: {} | X: {} | Y: {}", self.accumulator, self.x, self.y);
+        println!("Stack Pointer: ${:02X} -> ${:04X}", self.stack_pointer, self.stack_pointer as u16 + 0x0100);
+        println!("Registers: {:?}", self.registers);
+        println!(
+            "Carry: {} | Zero: {} | Interrupt Disable: {} | Decimal: {} | Break: {} | Overflow: {} | Negative: {}",
+            self.processor_status.carry_flag(), self.processor_status.zero_flag(), self.processor_status.interrupt_disable_flag(), 
+            self.processor_status.decimal_flag(), self.processor_status.break_flag(), self.processor_status.overflow_flag(), 
+            self.processor_status.negative_flag()
+        );
+        println!("------------------------------------");
     }
 }
 

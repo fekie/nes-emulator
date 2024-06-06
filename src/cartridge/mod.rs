@@ -1,6 +1,5 @@
 use crate::{
     bus::{Bus, Interrupts},
-    debug::{hex_print_byte, hex_print_word},
     ines::Ines,
     ClockableMapper,
 };
@@ -19,7 +18,7 @@ impl From<Ines> for Cartridge {
 
 impl Cartridge {
     /// Initialize the APU.
-    pub fn initialize(&mut self, _bus: &Bus) {
+    pub fn initialize(&mut self) {
         self.0.initialize();
     }
 
@@ -40,6 +39,7 @@ impl Cartridge {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
 struct NROM {
     program_rom: [u8; KB * 32],
