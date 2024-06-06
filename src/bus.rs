@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 const PPU_CLOCK_DIVISOR: u8 = 4;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Request {
     Active,
     Inactive,
@@ -15,9 +15,9 @@ pub enum Request {
 
 /// Wraps over internally mutatable interrupt states.
 pub struct Interrupts {
-    interrupt: Rc<RefCell<Request>>,
-    non_maskable_interrupt: Rc<RefCell<Request>>,
-    initialized: bool,
+    pub interrupt: Rc<RefCell<Request>>,
+    pub non_maskable_interrupt: Rc<RefCell<Request>>,
+    pub initialized: bool,
 }
 
 impl Interrupts {

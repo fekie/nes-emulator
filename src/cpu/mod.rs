@@ -1,6 +1,6 @@
 use instruction::{FullOpcode, Instruction, Opcode};
 
-use crate::bus::Bus;
+use crate::bus::{Bus, Request};
 use crate::Mapper;
 use processor_status::ProcessorStatus;
 
@@ -70,10 +70,13 @@ impl CPU {
     /// Runs a full instruction cycle. Returns the amount of
     /// machine cycles taken.
     pub fn cycle(&mut self, bus: &Bus) -> u8 {
-        // fetch + decode
-        let instruction = self.fetch(bus);
-        dbg!(instruction);
+        // check for interrupts
+        /* if *bus.interrupts.borrow().interrupt.borrow() == Request::Active || *bus.interrupts.borrow().non_maskable_interrupt.borrow() == Request::Active {
+            // if we get an interrupt, then set the previous pc back
 
+        } */
+        // fetch
+        let instruction = self.fetch(bus);
         self.pretty_print_cpu_state(instruction);
 
         // execute
@@ -114,9 +117,21 @@ impl CPU {
     /// Executes the instruction and returns the amount of machine cycles that it took.
     pub fn execute(&mut self, instruction: Instruction, bus: &Bus) -> u8 {
         match instruction.opcode {
-            Opcode::SEI => self.instruction_sei(bus, instruction.addressing_mode),
+            Opcode::SEI => self.instruction_sei(),
+            Opcode::CLD => self.instruction_cld(),
+            Opcode::LDA => self.instruction_lda(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             _ => unimplemented!("Instruction not implemented.")
         }
+    }
+
+    // Shortcuts to read a byte from the memory mapper because
+    // we use this a lot.
+    pub(in crate::cpu) fn read(&self, bus: &Bus, address: u16) -> u8 {
+        self.memory_mapper.read(bus, address)
+    }
+
+    pub(in crate::cpu) fn write(&mut self, bus: &Bus, address: u16, byte: u8)  {
+        self.memory_mapper.write(bus, address, byte);
     }
 
     #[allow(dead_code)]
