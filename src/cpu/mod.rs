@@ -1,6 +1,6 @@
 use instruction::{FullOpcode, Instruction, Opcode};
 
-use crate::bus::{Bus, Request};
+use crate::bus::Bus;
 use crate::Mapper;
 use processor_status::ProcessorStatus;
 

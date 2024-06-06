@@ -1,7 +1,4 @@
-use crate::{
-    bus::Bus,
-    cartridge::{self, Cartridge},
-};
+use crate::{bus::Bus, cartridge::Cartridge};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
@@ -22,7 +19,7 @@ impl PPU {
     }
 
     /// Initialize the PPU.
-    pub fn initialize(&mut self, bus: &Bus) {
+    pub fn initialize(&mut self) {
         self.initialized = true;
     }
 

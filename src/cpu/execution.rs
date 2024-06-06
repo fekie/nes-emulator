@@ -1,8 +1,5 @@
-use super::{
-    instruction::{AddressingMode, Instruction},
-    CPU,
-};
-use crate::{Bus, Mapper};
+use super::{instruction::AddressingMode, CPU};
+use crate::Bus;
 
 impl CPU {
     pub(super) fn instruction_lda(

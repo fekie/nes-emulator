@@ -31,7 +31,7 @@ impl Interrupts {
     }
 
     /// Initialize the APU.
-    pub fn initialize(&mut self, _bus: &Bus) {
+    pub fn initialize(&mut self) {
         // already initialized in new()
         self.initialized = true;
     }
@@ -98,15 +98,15 @@ impl Bus {
 
     pub fn initialize(&mut self) {
         // We go ahead and explicitly initialize everything,
-        // even if under the hood it doesnt change any values.
+        // even if under the hood it doesn't change any values.
         // This allows us to be sure that we're initializing anything,
         // and allows for us to be able to add initialization behavior
         // later if needed.
         self.cpu.borrow_mut().initialize(self);
-        self.ppu.borrow_mut().initialize(self);
-        self.apu.borrow_mut().initialize(self);
-        self.cartridge.borrow_mut().initialize(self);
-        self.interrupts.borrow_mut().initialize(self);
+        self.ppu.borrow_mut().initialize();
+        self.apu.borrow_mut().initialize();
+        self.cartridge.borrow_mut().initialize();
+        self.interrupts.borrow_mut().initialize();
 
         assert!(self.cpu.borrow().initialized());
         assert!(self.ppu.borrow().initialized());
