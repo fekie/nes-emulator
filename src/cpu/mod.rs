@@ -14,16 +14,17 @@ mod instruction;
 mod processor_status;
 mod helper;
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct CPU {
-    accumulator: u8,
-    x: u8,
-    y: u8,
-    stack_pointer: u8,
-    program_counter: u16,
-    registers: [u8; 6],
-    processor_status: ProcessorStatus,
-    memory_mapper: CpuMemoryMapper,
-    initialized: bool,
+    pub accumulator: u8,
+    pub x: u8,
+    pub y: u8,
+    pub stack_pointer: u8,
+    pub program_counter: u16,
+    pub registers: [u8; 6],
+    pub processor_status: ProcessorStatus,
+    pub memory_mapper: CpuMemoryMapper,
+    pub initialized: bool,
 }
 
 impl CPU {
@@ -121,6 +122,7 @@ impl CPU {
             Opcode::SEI => self.instruction_sei(),
             Opcode::CLD => self.instruction_cld(),
             Opcode::LDA => self.instruction_lda(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::LDX => self.instruction_ldx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             _ => unimplemented!("Instruction not implemented.")
         }
     }

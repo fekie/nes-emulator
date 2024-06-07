@@ -63,12 +63,48 @@ impl CPU {
                     false => 5,
                 }
             }
-            _ => panic!("Invalid addressing mode"),
+            _ => handle_invalid_addressing_mode(),
         }
     }
 
-    pub(super) fn instruction_ldx(&mut self) -> u8 {
-        todo!()
+    pub(super) fn instruction_ldx(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        match addressing_mode {
+            AddressingMode::Immediate => {
+                dbg!(low_byte);
+                self.x = immediate(low_byte);
+                println!("{}", self.x);
+                2
+            }
+            AddressingMode::Zeropage => {
+                self.x = zeropage(self, bus, low_byte);
+                3
+            }
+            AddressingMode::ZeropageXIndexed => {
+                self.x = zeropage_x(self, bus, low_byte);
+                4
+            }
+            AddressingMode::Absolute => {
+                self.x = absolute(self, bus, low_byte, high_byte);
+                4
+            }
+            AddressingMode::AbsoluteYIndexed => {
+                let (value, page_changed) = absolute_y(self, bus, low_byte, high_byte);
+
+                self.x = value;
+
+                match page_changed {
+                    true => 5,
+                    false => 4,
+                }
+            }
+            _ => handle_invalid_addressing_mode(),
+        }
     }
 
     pub(super) fn instruction_sei(&mut self) -> u8 {
@@ -82,8 +118,14 @@ impl CPU {
     }
 }
 
+fn handle_invalid_addressing_mode() -> ! {
+    panic!("Invalid addressing mode")
+}
+
 #[cfg(test)]
 mod test {
+    use std::borrow::Borrow;
+
     use super::*;
     use crate::{
         cartridge::{self, Cartridge},
@@ -100,6 +142,21 @@ mod test {
         rom.into()
     }
 
+    /// Creates and initializes a system, loads the program into memory, and
+    /// begins to execute it. Returns the bus so that we can inspect the state.
+    fn simulate_execution(instruction_count: usize, program: Vec<u8>) -> Bus {
+        let cartridge = create_cartridge(program);
+        let mut bus = Bus::new(cartridge);
+        bus.initialize_test_mode(0x8000);
+
+        for _ in 0..instruction_count {
+            dbg!(bus.cpu.borrow_mut().program_counter);
+            bus.clock_cpu();
+        }
+
+        bus
+    }
+
     #[test]
     fn test_lda() {
         // program:
@@ -111,7 +168,20 @@ mod test {
         // LDA $0299,Y
         // LDA ($03,X)
         // LDA ($02),Y
-        let cartridge = create_cartridge(vec![]);
-        todo!()
+        //let cartridge = create_cartridge(vec![]);
+        //todo!()
+    }
+
+    // not fully tested
+    #[test]
+    fn test_ldx() {
+        // program:
+        // LDX #$55
+        let instruction_count = 1;
+        let program = vec![0xA2, 0x55];
+
+        let bus = simulate_execution(instruction_count, program);
+
+        assert_eq!(bus.cpu.borrow_mut().x, 0x55);
     }
 }

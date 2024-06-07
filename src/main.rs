@@ -87,6 +87,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut bus = Bus::new(cartridge);
         bus.initialize();
 
+        //let cpu = bus.cpu.borrow();
+
         // If we execute an instruction and it takes more cycles than we have available,
         // then we store the amount here (as a negative number) that we need to take off.
         let mut cpu_cycle_debt: i64 = 0;
