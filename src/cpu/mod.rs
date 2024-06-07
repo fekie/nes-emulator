@@ -12,6 +12,7 @@ pub const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 mod execution;
 mod instruction;
 mod processor_status;
+mod helper;
 
 pub struct CPU {
     accumulator: u8,

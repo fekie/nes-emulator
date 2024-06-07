@@ -1,3 +1,6 @@
+use super::helper::{
+    absolute, absolute_x, absolute_y, immediate, indirect_x, indirect_y, zeropage, zeropage_x,
+};
 use super::{instruction::AddressingMode, CPU};
 use crate::Bus;
 
@@ -11,31 +14,25 @@ impl CPU {
     ) -> u8 {
         match addressing_mode {
             AddressingMode::Immediate => {
-                self.accumulator = low_byte.unwrap();
+                self.accumulator = immediate(low_byte);
                 2
             }
             AddressingMode::Zeropage => {
-                let address = low_byte.unwrap() as u16;
-                self.accumulator = self.read(bus, address);
+                self.accumulator = zeropage(self, bus, low_byte);
                 3
             }
             AddressingMode::ZeropageXIndexed => {
-                let address = low_byte.unwrap().wrapping_add(self.accumulator) as u16;
-                self.accumulator = self.read(bus, address);
+                self.accumulator = zeropage_x(self, bus, low_byte);
                 4
             }
             AddressingMode::Absolute => {
-                let address = pack_bytes_wrapped(low_byte, high_byte);
-                self.accumulator = self.read(bus, address);
+                self.accumulator = absolute(self, bus, low_byte, high_byte);
                 4
             }
             AddressingMode::AbsoluteXIndexed => {
-                let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
-                let address = pre_add_address.wrapping_add(self.x as u16);
+                let (value, page_changed) = absolute_x(self, bus, low_byte, high_byte);
 
-                let page_changed = low_byte.unwrap().checked_add(self.x).is_none();
-
-                self.accumulator = self.read(bus, address);
+                self.accumulator = value;
 
                 match page_changed {
                     true => 5,
@@ -43,12 +40,9 @@ impl CPU {
                 }
             }
             AddressingMode::AbsoluteYIndexed => {
-                let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
-                let address = pre_add_address.wrapping_add(self.y as u16);
+                let (value, page_changed) = absolute_y(self, bus, low_byte, high_byte);
 
-                let page_changed = low_byte.unwrap().checked_add(self.y).is_none();
-
-                self.accumulator = self.read(bus, address);
+                self.accumulator = value;
 
                 match page_changed {
                     true => 5,
@@ -56,29 +50,13 @@ impl CPU {
                 }
             }
             AddressingMode::IndirectXIndexed => {
-                let base_address = low_byte.unwrap().wrapping_add(self.x) as u16;
-
-                let resolved_address = pack_bytes(
-                    self.read(bus, base_address),
-                    self.read(bus, base_address + 1),
-                );
-
-                self.accumulator = self.read(bus, resolved_address);
-
+                self.accumulator = indirect_x(self, bus, low_byte);
                 6
             }
             AddressingMode::IndirectYIndexed => {
-                let low_base_address = low_byte.unwrap() as u16;
-                let high_base_address = low_byte.unwrap().wrapping_add(1) as u16;
+                let (value, page_changed) = indirect_y(self, bus, low_byte);
 
-                let page_changed = low_base_address > high_base_address;
-
-                let resolved_address = pack_bytes(
-                    self.read(bus, low_base_address),
-                    self.read(bus, high_base_address),
-                );
-
-                self.accumulator = self.read(bus, resolved_address);
+                self.accumulator = value;
 
                 match page_changed {
                     true => 6,
@@ -87,6 +65,10 @@ impl CPU {
             }
             _ => panic!("Invalid addressing mode"),
         }
+    }
+
+    pub(super) fn instruction_ldx(&mut self) -> u8 {
+        todo!()
     }
 
     pub(super) fn instruction_sei(&mut self) -> u8 {
@@ -100,10 +82,36 @@ impl CPU {
     }
 }
 
-fn pack_bytes(low_byte: u8, high_byte: u8) -> u16 {
-    ((high_byte as u16) << 8) | low_byte as u16
-}
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{
+        cartridge::{self, Cartridge},
+        ines::{Header, Ines},
+    };
 
-fn pack_bytes_wrapped(low_byte: Option<u8>, high_byte: Option<u8>) -> u16 {
-    ((high_byte.unwrap() as u16) << 8) | low_byte.unwrap() as u16
+    fn create_cartridge(program: Vec<u8>) -> Cartridge {
+        let mut rom = Ines::default();
+
+        for (i, byte) in program.into_iter().enumerate() {
+            rom.program_rom[i] = byte;
+        }
+
+        rom.into()
+    }
+
+    #[test]
+    fn test_lda() {
+        // program:
+        // LDA #$55
+        // LDA $44
+        // LDA $33,X
+        // LDA $0122
+        // LDA $0111,X
+        // LDA $0299,Y
+        // LDA ($03,X)
+        // LDA ($02),Y
+        let cartridge = create_cartridge(vec![]);
+        todo!()
+    }
 }

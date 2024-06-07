@@ -48,7 +48,7 @@ impl Ines {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 
 pub struct Header {
     // Size of PRG ROM in 16 KB units
@@ -58,6 +58,19 @@ pub struct Header {
     pub nametable_arrangement: NametableArrangement,
     // bits flags_7[8:=5] set as the lowest nibble
     pub mapper_number: u8,
+}
+
+impl Default for Header {
+    /// The default header specifies 32KB of program rom, 8KB of character rom,
+    /// Horizontal nametable arrangement, and the NROM mapper.
+    fn default() -> Self {
+        Self {
+            program_rom_size_multiplier: 2,
+            character_rom_size_multiplier: 1,
+            nametable_arrangement: NametableArrangement::default(),
+            mapper_number: 0,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]

@@ -10,6 +10,7 @@ pub struct Cartridge(Box<dyn ClockableMapper>);
 
 impl From<Ines> for Cartridge {
     fn from(ines: Ines) -> Self {
+        dbg!(&ines.header);
         let mapper = select_mapper(ines);
 
         Self(mapper)
