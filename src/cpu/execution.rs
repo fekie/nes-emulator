@@ -5,6 +5,300 @@ use super::{instruction::AddressingMode, CPU};
 use crate::Bus;
 
 impl CPU {
+    // make placeholder functions for all of these instructions
+    // ADC | AND | ASL | BCC | BCS | BEQ | BIT | BMI | BNE | BPL | BRK | BVC | BVS | CLC | CLD | CLI | CLV | CMP | CPX | CPY | DEC | DEX | DEY | EOR | INC | INX | INY | JMP | JSR | LDA | LDX | LDY | LSR | NOP | ORA | PHA | PHP | PLA | PLP | ROL | ROR | RTI | RTS | SBC | SEC | SED | SEI | STA | STX | STY | TAX | TAY | TSX | TXA | TXS | TYA |
+
+    pub(super) fn instruction_adc(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_and(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_asl(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bcc(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bcs(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_beq(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bit(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bmi(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bne(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bpl(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_brk(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bvc(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_bvs(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_clc(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_cld(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        self.processor_status.clear_decimal_flag();
+        2
+    }
+
+    pub(super) fn instruction_cli(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_clv(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_cmp(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_cpx(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_cpy(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_dec(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_dex(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_dey(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_eor(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_inc(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_inx(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_iny(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_jmp(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_jsr(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
     pub(super) fn instruction_lda(
         &mut self,
         bus: &Bus,
@@ -107,14 +401,255 @@ impl CPU {
         }
     }
 
-    pub(super) fn instruction_sei(&mut self) -> u8 {
+    pub(super) fn instruction_ldy(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_lsr(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_nop(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_ora(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_pha(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_php(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_pla(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_plp(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_rol(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_ror(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_rti(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_rts(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_sbc(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_sec(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_sed(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_sei(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
         self.processor_status.set_interrupt_disable_flag();
         2
     }
 
-    pub(super) fn instruction_cld(&mut self) -> u8 {
-        self.processor_status.clear_decimal_flag();
-        2
+    pub(super) fn instruction_sta(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_stx(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_sty(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_tax(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_tay(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_tsx(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_txa(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_txs(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
+    }
+
+    pub(super) fn instruction_tya(
+        &mut self,
+        bus: &Bus,
+        addressing_mode: AddressingMode,
+        low_byte: Option<u8>,
+        high_byte: Option<u8>,
+    ) -> u8 {
+        todo!()
     }
 }
 
