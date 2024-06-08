@@ -17,7 +17,7 @@ mod system;
 
 impl CPU {
     /// Sets the zero flag if the given byte is 0.
-    fn decide_zero_flag(&mut self, byte: u8) {
+    fn modify_zero_flag(&mut self, byte: u8) {
         match byte == 0 {
             true => self.processor_status.set_zero_flag(),
             false => self.processor_status.clear_zero_flag(),
@@ -25,7 +25,7 @@ impl CPU {
     }
 
     /// Sets the negative flag given byte is negative (in two's compliment)
-    fn decide_negative_flag(&mut self, byte: u8) {
+    fn modify_negative_flag(&mut self, byte: u8) {
         match byte >> 7 != 0 {
             true => self.processor_status.set_negative_flag(),
             false => self.processor_status.clear_negative_flag(),
@@ -33,7 +33,7 @@ impl CPU {
     }
 
     /// Sets the overflow flag if an overflow ocurred.
-    fn decide_overflow_flag(&mut self, op1: u8, op2: u8) {
+    fn modify_overflow_flag(&mut self, op1: u8, op2: u8) {
         let op1_sign = op1 >> 7;
         let op2_sign = op2 >> 7;
 
@@ -51,7 +51,7 @@ impl CPU {
     }
 
     /// Sets the carry flag if a carry out ocurred.
-    fn decide_carry_flag(&mut self, op1: u8, op2: u8) {
+    fn modify_carry_flag(&mut self, op1: u8, op2: u8) {
         match op1.checked_add(op2).is_none() {
             true => self.processor_status.set_carry_flag(),
             false => self.processor_status.clear_carry_flag(),
