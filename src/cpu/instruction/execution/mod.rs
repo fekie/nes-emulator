@@ -15,45 +15,84 @@ mod stack;
 mod status_flags;
 mod system;
 
+impl CPU {
+    /// Sets the zero flag if the given byte is 0.
+    fn decide_zero_flag(&mut self, byte: u8) {
+        match byte == 0 {
+            true => self.processor_status.set_zero_flag(),
+            false => self.processor_status.clear_zero_flag(),
+        }
+    }
+
+    /// Sets the negative flag given byte is negative (in two's compliment)
+    fn decide_negative_flag(&mut self, byte: u8) {
+        match byte >> 7 != 0 {
+            true => self.processor_status.set_negative_flag(),
+            false => self.processor_status.clear_negative_flag(),
+        }
+    }
+
+    /// Sets the overflow flag if an overflow ocurred.
+    fn decide_overflow_flag(&mut self, op1: u8, op2: u8) {
+        let op1_sign = op1 >> 7;
+        let op2_sign = op2 >> 7;
+
+        let result = op1 + op2;
+
+        // If the signs were the same and are different from the result,
+        // we have an overflow.
+        match op1_sign == op2_sign {
+            true => match op1_sign == result >> 7 {
+                true => self.processor_status.clear_overflow_flag(),
+                false => self.processor_status.set_overflow_flag(),
+            },
+            false => self.processor_status.clear_overflow_flag(),
+        }
+    }
+
+    /// Sets the carry flag if a carry out ocurred.
+    fn decide_carry_flag(&mut self, op1: u8, op2: u8) {
+        match op1.checked_add(op2).is_none() {
+            true => self.processor_status.set_carry_flag(),
+            false => self.processor_status.clear_carry_flag(),
+        }
+    }
+}
+
 fn handle_invalid_addressing_mode() -> ! {
     panic!("Invalid addressing mode")
 }
 
-pub(crate) fn pack_bytes(low_byte: u8, high_byte: u8) -> u16 {
+fn pack_bytes(low_byte: u8, high_byte: u8) -> u16 {
     ((high_byte as u16) << 8) | low_byte as u16
 }
 
-pub(crate) fn pack_bytes_wrapped(low_byte: Option<u8>, high_byte: Option<u8>) -> u16 {
+fn pack_bytes_wrapped(low_byte: Option<u8>, high_byte: Option<u8>) -> u16 {
     ((high_byte.unwrap() as u16) << 8) | low_byte.unwrap() as u16
 }
 
 // rough and dirty addressing shortcuts
-pub(crate) fn immediate(low_byte: Option<u8>) -> u8 {
+fn immediate(low_byte: Option<u8>) -> u8 {
     low_byte.unwrap()
 }
 
-pub(crate) fn zeropage(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+fn zeropage(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     let address = low_byte.unwrap() as u16;
     cpu.read(bus, address)
 }
 
-pub(crate) fn zeropage_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+fn zeropage_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     let address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
     cpu.read(bus, address)
 }
 
-pub(crate) fn absolute(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> u8 {
+fn absolute(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> u8 {
     let address = pack_bytes_wrapped(low_byte, high_byte);
     cpu.read(bus, address)
 }
 
 /// Returns the value and whether a page boundary was crossed.
-pub(crate) fn absolute_x(
-    cpu: &CPU,
-    bus: &Bus,
-    low_byte: Option<u8>,
-    high_byte: Option<u8>,
-) -> (u8, bool) {
+fn absolute_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> (u8, bool) {
     let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
     let address = pre_add_address.wrapping_add(cpu.x as u16);
 
@@ -63,12 +102,7 @@ pub(crate) fn absolute_x(
 }
 
 /// Returns the value and whether a page boundary was crossed.
-pub(crate) fn absolute_y(
-    cpu: &CPU,
-    bus: &Bus,
-    low_byte: Option<u8>,
-    high_byte: Option<u8>,
-) -> (u8, bool) {
+fn absolute_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> (u8, bool) {
     let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
     let address = pre_add_address.wrapping_add(cpu.y as u16);
 
@@ -77,7 +111,7 @@ pub(crate) fn absolute_y(
     (cpu.read(bus, address), page_changed)
 }
 
-pub(crate) fn indirect_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+fn indirect_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     let base_address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
 
     let resolved_address = pack_bytes(cpu.read(bus, base_address), cpu.read(bus, base_address + 1));
@@ -85,7 +119,7 @@ pub(crate) fn indirect_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     cpu.read(bus, resolved_address)
 }
 
-pub(crate) fn indirect_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> (u8, bool) {
+fn indirect_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> (u8, bool) {
     let low_base_address = low_byte.unwrap() as u16;
     let high_base_address = low_byte.unwrap().wrapping_add(1) as u16;
 
