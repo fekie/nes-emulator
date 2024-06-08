@@ -9,7 +9,6 @@ pub const NMI_VECTOR_ADDRESS: u16 = 0xFFFA;
 pub const RESET_VECTOR_ADDRESS: u16 = 0xFFFC;
 pub const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 
-mod execution;
 mod instruction;
 mod processor_status;
 mod helper;
