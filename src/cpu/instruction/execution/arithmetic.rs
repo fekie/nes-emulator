@@ -1,6 +1,6 @@
 use super::{
-    absolute, absolute_x, absolute_y, handle_invalid_addressing_mode, immediate, indirect_x,
-    indirect_y, zeropage, zeropage_x,
+    absolute_read, absolute_x_read, absolute_y_read, handle_invalid_addressing_mode,
+    immediate_read, indirect_x_read, indirect_y_read, zeropage_read, zeropage_x_read,
 };
 use super::{AddressingMode, CPU};
 use crate::Bus;

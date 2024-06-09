@@ -72,27 +72,54 @@ fn pack_bytes_wrapped(low_byte: Option<u8>, high_byte: Option<u8>) -> u16 {
 }
 
 // rough and dirty addressing shortcuts
-fn immediate(low_byte: Option<u8>) -> u8 {
+fn immediate_read(low_byte: Option<u8>) -> u8 {
     low_byte.unwrap()
 }
 
-fn zeropage(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+fn zeropage_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     let address = low_byte.unwrap() as u16;
     cpu.read(bus, address)
 }
 
-fn zeropage_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+// value is the value written to memory
+fn zeropage_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
+    let address = low_byte.unwrap() as u16;
+    cpu.write(bus, address, value);
+}
+
+fn zeropage_x_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     let address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
     cpu.read(bus, address)
 }
 
-fn absolute(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> u8 {
+fn zeropage_x_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
+    let address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
+    cpu.write(bus, address, value);
+}
+
+fn absolute_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> u8 {
     let address = pack_bytes_wrapped(low_byte, high_byte);
     cpu.read(bus, address)
 }
 
+fn absolute_write(
+    cpu: &mut CPU,
+    bus: &Bus,
+    low_byte: Option<u8>,
+    high_byte: Option<u8>,
+    value: u8,
+) {
+    let address = pack_bytes_wrapped(low_byte, high_byte);
+    cpu.write(bus, address, value);
+}
+
 /// Returns the value and whether a page boundary was crossed.
-fn absolute_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> (u8, bool) {
+fn absolute_x_read(
+    cpu: &CPU,
+    bus: &Bus,
+    low_byte: Option<u8>,
+    high_byte: Option<u8>,
+) -> (u8, bool) {
     let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
     let address = pre_add_address.wrapping_add(cpu.x as u16);
 
@@ -101,8 +128,25 @@ fn absolute_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>)
     (cpu.read(bus, address), page_changed)
 }
 
+fn absolute_x_write(
+    cpu: &mut CPU,
+    bus: &Bus,
+    low_byte: Option<u8>,
+    high_byte: Option<u8>,
+    value: u8,
+) {
+    let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
+    let address = pre_add_address.wrapping_add(cpu.x as u16);
+    cpu.write(bus, address, value);
+}
+
 /// Returns the value and whether a page boundary was crossed.
-fn absolute_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>) -> (u8, bool) {
+fn absolute_y_read(
+    cpu: &CPU,
+    bus: &Bus,
+    low_byte: Option<u8>,
+    high_byte: Option<u8>,
+) -> (u8, bool) {
     let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
     let address = pre_add_address.wrapping_add(cpu.y as u16);
 
@@ -111,7 +155,19 @@ fn absolute_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>, high_byte: Option<u8>)
     (cpu.read(bus, address), page_changed)
 }
 
-fn indirect_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+fn absolute_y_write(
+    cpu: &mut CPU,
+    bus: &Bus,
+    low_byte: Option<u8>,
+    high_byte: Option<u8>,
+    value: u8,
+) {
+    let pre_add_address = pack_bytes_wrapped(low_byte, high_byte);
+    let address = pre_add_address.wrapping_add(cpu.y as u16);
+    cpu.write(bus, address, value);
+}
+
+fn indirect_x_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     let base_address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
 
     let resolved_address = pack_bytes(cpu.read(bus, base_address), cpu.read(bus, base_address + 1));
@@ -119,7 +175,15 @@ fn indirect_x(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
     cpu.read(bus, resolved_address)
 }
 
-fn indirect_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> (u8, bool) {
+fn indirect_x_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
+    let base_address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
+
+    let resolved_address = pack_bytes(cpu.read(bus, base_address), cpu.read(bus, base_address + 1));
+
+    cpu.write(bus, resolved_address, value);
+}
+
+fn indirect_y_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> (u8, bool) {
     let low_base_address = low_byte.unwrap() as u16;
     let high_base_address = low_byte.unwrap().wrapping_add(1) as u16;
 
@@ -131,6 +195,18 @@ fn indirect_y(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> (u8, bool) {
     ) + cpu.y as u16;
 
     (cpu.read(bus, resolved_address), page_changed)
+}
+
+fn indirect_y_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
+    let low_base_address = low_byte.unwrap() as u16;
+    let high_base_address = low_byte.unwrap().wrapping_add(1) as u16;
+
+    let resolved_address = pack_bytes(
+        cpu.read(bus, low_base_address),
+        cpu.read(bus, high_base_address),
+    ) + cpu.y as u16;
+
+    cpu.write(bus, resolved_address, value);
 }
 
 #[cfg(test)]

@@ -183,8 +183,8 @@ impl CPU {
         self.memory_mapper.read(bus, address)
     }
 
-    pub(in crate::cpu) fn write(&mut self, bus: &Bus, address: u16, byte: u8)  {
-        self.memory_mapper.write(bus, address, byte);
+    pub(in crate::cpu) fn write(&mut self, bus: &Bus, address: u16, value: u8)  {
+        self.memory_mapper.write(bus, address, value);
     }
 
     #[allow(dead_code)]
