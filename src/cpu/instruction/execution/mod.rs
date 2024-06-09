@@ -9,7 +9,7 @@ mod incr_decr;
 mod jumps_calls;
 mod load_store; // completed
 mod logical;
-mod register_transfers;
+mod register_transfers; // completed
 mod shifts;
 mod stack;
 mod status_flags;
