@@ -1,7 +1,4 @@
-use super::{
-    absolute_read, absolute_x_read, absolute_y_read, handle_invalid_addressing_mode,
-    immediate_read, indirect_x_read, indirect_y_read, zeropage_read, zeropage_x_read,
-};
+use super::*;
 use super::{AddressingMode, CPU};
 use crate::Bus;
 
@@ -228,14 +225,33 @@ impl CPU {
     ) -> u8 {
         match addressing_mode {
             AddressingMode::Zeropage => {
-                todo!()
+                zeropage_write(self, bus, low_byte, self.accumulator);
+                3
             }
-            AddressingMode::ZeropageXIndexed => todo!(),
-            AddressingMode::Absolute => todo!(),
-            AddressingMode::AbsoluteXIndexed => todo!(),
-            AddressingMode::AbsoluteYIndexed => todo!(),
-            AddressingMode::IndirectXIndexed => todo!(),
-            AddressingMode::IndirectYIndexed => todo!(),
+            AddressingMode::ZeropageXIndexed => {
+                zeropage_x_write(self, bus, low_byte, self.accumulator);
+                4
+            }
+            AddressingMode::Absolute => {
+                absolute_write(self, bus, low_byte, high_byte, self.accumulator);
+                4
+            }
+            AddressingMode::AbsoluteXIndexed => {
+                absolute_x_write(self, bus, low_byte, high_byte, self.accumulator);
+                5
+            }
+            AddressingMode::AbsoluteYIndexed => {
+                absolute_y_write(self, bus, low_byte, high_byte, self.accumulator);
+                5
+            }
+            AddressingMode::IndirectXIndexed => {
+                indirect_x_write(self, bus, low_byte, self.accumulator);
+                6
+            }
+            AddressingMode::IndirectYIndexed => {
+                indirect_y_write(self, bus, low_byte, self.accumulator);
+                6
+            }
             _ => handle_invalid_addressing_mode(),
         }
     }
@@ -247,7 +263,21 @@ impl CPU {
         low_byte: Option<u8>,
         high_byte: Option<u8>,
     ) -> u8 {
-        todo!()
+        match addressing_mode {
+            AddressingMode::Zeropage => {
+                zeropage_write(self, bus, low_byte, self.x);
+                3
+            }
+            AddressingMode::ZeropageYIndexed => {
+                zeropage_y_write(self, bus, low_byte, self.x);
+                4
+            }
+            AddressingMode::Absolute => {
+                absolute_write(self, bus, low_byte, high_byte, self.x);
+                4
+            }
+            _ => handle_invalid_addressing_mode(),
+        }
     }
 
     pub(crate) fn instruction_sty(
@@ -257,6 +287,20 @@ impl CPU {
         low_byte: Option<u8>,
         high_byte: Option<u8>,
     ) -> u8 {
-        todo!()
+        match addressing_mode {
+            AddressingMode::Zeropage => {
+                zeropage_write(self, bus, low_byte, self.x);
+                3
+            }
+            AddressingMode::ZeropageXIndexed => {
+                zeropage_x_write(self, bus, low_byte, self.x);
+                4
+            }
+            AddressingMode::Absolute => {
+                absolute_write(self, bus, low_byte, high_byte, self.x);
+                4
+            }
+            _ => handle_invalid_addressing_mode(),
+        }
     }
 }

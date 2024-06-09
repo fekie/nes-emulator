@@ -7,7 +7,7 @@ mod arithmetic;
 mod branches;
 mod incr_decr;
 mod jumps_calls;
-mod load_store;
+mod load_store; // completed
 mod logical;
 mod register_transfers;
 mod shifts;
@@ -94,6 +94,16 @@ fn zeropage_x_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
 
 fn zeropage_x_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
     let address = low_byte.unwrap().wrapping_add(cpu.x) as u16;
+    cpu.write(bus, address, value);
+}
+
+fn zeropage_y_read(cpu: &CPU, bus: &Bus, low_byte: Option<u8>) -> u8 {
+    let address = low_byte.unwrap().wrapping_add(cpu.y) as u16;
+    cpu.read(bus, address)
+}
+
+fn zeropage_y_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
+    let address = low_byte.unwrap().wrapping_add(cpu.y) as u16;
     cpu.write(bus, address, value);
 }
 
