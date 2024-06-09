@@ -168,12 +168,12 @@ impl CPU {
             Opcode::STA => self.instruction_sta(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::STX => self.instruction_stx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::STY => self.instruction_sty(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::TAX => self.instruction_tax(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::TAY => self.instruction_tay(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::TAX => self.instruction_tax(),
+            Opcode::TAY => self.instruction_tay(),
             Opcode::TSX => self.instruction_tsx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::TXA => self.instruction_txa(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::TXA => self.instruction_txa(),
             Opcode::TXS => self.instruction_txs(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::TYA => self.instruction_tya(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::TYA => self.instruction_tya(),
         }
     }
 

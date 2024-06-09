@@ -1,48 +1,31 @@
-use super::{
-    absolute_read, absolute_x_read, absolute_y_read, handle_invalid_addressing_mode,
-    immediate_read, indirect_x_read, indirect_y_read, zeropage_read, zeropage_x_read,
-};
-use super::{AddressingMode, CPU};
-use crate::Bus;
+use super::CPU;
 
 impl CPU {
-    pub(crate) fn instruction_tax(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
-        todo!()
+    pub(crate) fn instruction_tax(&mut self) -> u8 {
+        self.x = self.accumulator;
+        self.modify_negative_flag(self.x);
+        self.modify_zero_flag(self.x);
+        2
     }
 
-    pub(crate) fn instruction_tay(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
-        todo!()
+    pub(crate) fn instruction_tay(&mut self) -> u8 {
+        self.y = self.accumulator;
+        self.modify_negative_flag(self.y);
+        self.modify_zero_flag(self.y);
+        2
     }
 
-    pub(crate) fn instruction_txa(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
-        todo!()
+    pub(crate) fn instruction_txa(&mut self) -> u8 {
+        self.accumulator = self.x;
+        self.modify_negative_flag(self.accumulator);
+        self.modify_zero_flag(self.accumulator);
+        2
     }
 
-    pub(crate) fn instruction_tya(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
-        todo!()
+    pub(crate) fn instruction_tya(&mut self) -> u8 {
+        self.accumulator = self.y;
+        self.modify_negative_flag(self.accumulator);
+        self.modify_zero_flag(self.accumulator);
+        2
     }
 }
