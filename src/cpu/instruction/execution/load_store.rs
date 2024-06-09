@@ -16,24 +16,34 @@ impl CPU {
         match addressing_mode {
             AddressingMode::Immediate => {
                 self.accumulator = immediate(low_byte);
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
                 2
             }
             AddressingMode::Zeropage => {
                 self.accumulator = zeropage(self, bus, low_byte);
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
                 3
             }
             AddressingMode::ZeropageXIndexed => {
                 self.accumulator = zeropage_x(self, bus, low_byte);
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
                 4
             }
             AddressingMode::Absolute => {
                 self.accumulator = absolute(self, bus, low_byte, high_byte);
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
                 4
             }
             AddressingMode::AbsoluteXIndexed => {
                 let (value, page_changed) = absolute_x(self, bus, low_byte, high_byte);
 
                 self.accumulator = value;
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
 
                 match page_changed {
                     true => 5,
@@ -44,6 +54,8 @@ impl CPU {
                 let (value, page_changed) = absolute_y(self, bus, low_byte, high_byte);
 
                 self.accumulator = value;
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
 
                 match page_changed {
                     true => 5,
@@ -52,12 +64,16 @@ impl CPU {
             }
             AddressingMode::IndirectXIndexed => {
                 self.accumulator = indirect_x(self, bus, low_byte);
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
                 6
             }
             AddressingMode::IndirectYIndexed => {
                 let (value, page_changed) = indirect_y(self, bus, low_byte);
 
                 self.accumulator = value;
+                self.modify_negative_flag(self.accumulator);
+                self.modify_zero_flag(self.accumulator);
 
                 match page_changed {
                     true => 6,
@@ -78,35 +94,34 @@ impl CPU {
         match addressing_mode {
             AddressingMode::Immediate => {
                 self.x = immediate(low_byte);
-
-                match self.x >> 7 != 0 {
-                    true => self.processor_status.set_negative_flag(),
-                    false => self.processor_status.clear_negative_flag(),
-                }
-
-                match self.x == 0 {
-                    true => self.processor_status.set_zero_flag(),
-                    false => self.processor_status.clear_zero_flag(),
-                }
-
+                self.modify_negative_flag(self.x);
+                self.modify_zero_flag(self.x);
                 2
             }
             AddressingMode::Zeropage => {
                 self.x = zeropage(self, bus, low_byte);
+                self.modify_negative_flag(self.x);
+                self.modify_zero_flag(self.x);
                 3
             }
             AddressingMode::ZeropageXIndexed => {
                 self.x = zeropage_x(self, bus, low_byte);
+                self.modify_negative_flag(self.x);
+                self.modify_zero_flag(self.x);
                 4
             }
             AddressingMode::Absolute => {
                 self.x = absolute(self, bus, low_byte, high_byte);
+                self.modify_negative_flag(self.x);
+                self.modify_zero_flag(self.x);
                 4
             }
             AddressingMode::AbsoluteYIndexed => {
                 let (value, page_changed) = absolute_y(self, bus, low_byte, high_byte);
 
                 self.x = value;
+                self.modify_negative_flag(self.x);
+                self.modify_zero_flag(self.x);
 
                 match page_changed {
                     true => 5,
