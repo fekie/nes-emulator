@@ -1,7 +1,12 @@
 const HEADER_BYTES: usize = 16;
 const KB: usize = 1024;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+const DEFAULT_PROGRAM_ROM_SIZE_MULTIPLIER: u8 = 2;
+const DEFAULT_CHARACTER_ROM_SIZE_MULTIPLIER: u8 = 1;
+const PROGRAM_BLOCK_SIZE: usize = 16;
+const CHARACTER_BLOCK_SIZE: usize = 8;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct Ines {
     pub header: Header,
     pub program_rom: Vec<u8>,
@@ -32,8 +37,8 @@ impl Ines {
             mapper_number,
         };
 
-        let program_rom_size = program_rom_size_multiplier as usize * KB * 16;
-        let character_rom_size = character_rom_size_multiplier as usize * KB * 8;
+        let program_rom_size = program_rom_size_multiplier as usize * KB * PROGRAM_BLOCK_SIZE;
+        let character_rom_size = character_rom_size_multiplier as usize * KB * CHARACTER_BLOCK_SIZE;
 
         let program_rom = bytes[HEADER_BYTES..program_rom_size + HEADER_BYTES].to_vec();
         let character_rom = bytes
@@ -48,7 +53,23 @@ impl Ines {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+impl Default for Ines {
+    fn default() -> Self {
+        let header = Header::default();
+        let program_rom =
+            vec![0; header.program_rom_size_multiplier as usize * KB * PROGRAM_BLOCK_SIZE];
+        let character_rom =
+            vec![0; header.character_rom_size_multiplier as usize * KB * CHARACTER_BLOCK_SIZE];
+
+        Self {
+            header,
+            program_rom,
+            character_rom,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 
 pub struct Header {
     // Size of PRG ROM in 16 KB units
@@ -58,6 +79,19 @@ pub struct Header {
     pub nametable_arrangement: NametableArrangement,
     // bits flags_7[8:=5] set as the lowest nibble
     pub mapper_number: u8,
+}
+
+impl Default for Header {
+    /// The default header specifies 32KB of program rom, 8KB of character rom,
+    /// Horizontal nametable arrangement, and the NROM mapper.
+    fn default() -> Self {
+        Self {
+            program_rom_size_multiplier: DEFAULT_PROGRAM_ROM_SIZE_MULTIPLIER,
+            character_rom_size_multiplier: DEFAULT_CHARACTER_ROM_SIZE_MULTIPLIER,
+            nametable_arrangement: NametableArrangement::default(),
+            mapper_number: 0,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]

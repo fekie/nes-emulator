@@ -96,6 +96,14 @@ impl Bus {
         }
     }
 
+    /// Initializes the CPU but starts the PC at an arbitrary value.
+    /// A common value to use would be 0x8000 as this is where program rom starts.
+    #[cfg(test)]
+    pub fn initialize_test_mode(&mut self, program_counter: u16) {
+        self.initialize();
+        self.cpu.borrow_mut().program_counter = program_counter;
+    }
+
     pub fn initialize(&mut self) {
         // We go ahead and explicitly initialize everything,
         // even if under the hood it doesn't change any values.
