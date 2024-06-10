@@ -8,11 +8,11 @@ mod branches;
 mod incr_decr;
 mod jumps_calls;
 mod load_store; // completed
-mod logical;
+mod logical; // completed
 mod register_transfers; // completed
 mod shifts;
 mod stack;
-mod status_flags;
+mod status_flags; // completed
 mod system;
 
 impl CPU {
