@@ -71,6 +71,21 @@ fn pack_bytes_wrapped(low_byte: Option<u8>, high_byte: Option<u8>) -> u16 {
     ((high_byte.unwrap() as u16) << 8) | low_byte.unwrap() as u16
 }
 
+fn twos_compliment_to_signed(value: u8) -> i8 {
+    match (value >> 7) != 0 {
+        true => {
+            let negative = (!value).wrapping_add(1);
+
+            // we check for the case that we had -128, which wouldnt be converted
+            match (negative == 0b1000_0000) {
+                true => -128,
+                false => -(negative as i8),
+            }
+        }
+        false => value as i8,
+    }
+}
+
 // rough and dirty addressing shortcuts
 fn immediate_read(low_byte: Option<u8>) -> u8 {
     low_byte.unwrap()
@@ -223,6 +238,8 @@ fn indirect_y_write(cpu: &mut CPU, bus: &Bus, low_byte: Option<u8>, value: u8) {
 mod test {
     use std::borrow::Borrow;
 
+    use cpu::instruction::execution::twos_compliment_to_signed;
+
     use crate::*;
     use crate::{
         cartridge::{self, Cartridge},
@@ -252,6 +269,21 @@ mod test {
         }
 
         bus
+    }
+
+    #[test]
+    fn test_twos_compliment_to_signed() {
+        let neg_52 = 0b11001100;
+        assert_eq!(-52, twos_compliment_to_signed(neg_52));
+
+        let pos_52 = 0b00110100;
+        assert_eq!(52, twos_compliment_to_signed(pos_52));
+
+        let zero = 0;
+        assert_eq!(0, twos_compliment_to_signed(zero));
+
+        let neg_128 = 0b1000_0000;
+        assert_eq!(-128, twos_compliment_to_signed(neg_128));
     }
 
     #[test]
