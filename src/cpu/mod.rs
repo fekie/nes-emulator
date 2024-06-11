@@ -121,7 +121,7 @@ impl CPU {
             Opcode::ADC => self.instruction_adc(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::AND => self.instruction_and(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::ASL => self.instruction_asl(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BCC => self.instruction_bcc(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::BCC => self.instruction_bcc(instruction.low_byte),
             Opcode::BCS => self.instruction_bcs(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::BEQ => self.instruction_beq(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::BIT => self.instruction_bit(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
