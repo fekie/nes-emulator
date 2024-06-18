@@ -4,9 +4,9 @@ use crate::Bus;
 // We organize the instructions using modules according to the
 // categories used on https://www.nesdev.org/obelisk-6502-guide/instructions.html
 mod arithmetic;
-mod branches;
+mod branches; // completed
 mod incr_decr;
-mod jumps_calls;
+mod jumps_calls; // completed
 mod load_store; // completed
 mod logical; // completed
 mod register_transfers; // completed
@@ -57,10 +57,36 @@ impl CPU {
             false => self.processor_status.clear_carry_flag(),
         }
     }
+
+    // Pushes a value from the stack
+    fn push(&mut self, bus: &Bus, byte: u8) {
+        self.write(bus, 0x0100 | self.stack_pointer as u16, byte);
+
+        self.stack_pointer = match self.stack_pointer.checked_sub(1) {
+            Some(x) => x,
+            None => panic!("CPU stack overflow"),
+        };
+    }
+
+    // Pops a value from the stack
+    fn pop(&mut self, bus: &Bus) -> u8 {
+        self.stack_pointer = match self.stack_pointer.checked_add(1) {
+            Some(x) => x,
+            None => panic!("CPU stack underflow"),
+        };
+
+        let byte = self.read(bus, 0x0100 | self.stack_pointer as u16);
+
+        byte
+    }
 }
 
 fn handle_invalid_addressing_mode() -> ! {
     panic!("Invalid addressing mode")
+}
+
+fn unpack_bytes(packed: u16) -> (u8, u8) {
+    ((packed & 0xFF) as u8, ((packed >> 8) & 0xFF) as u8)
 }
 
 fn pack_bytes(low_byte: u8, high_byte: u8) -> u16 {
