@@ -70,12 +70,12 @@ impl CPU {
 
     // Pops a value from the stack
     fn pop(&mut self, bus: &Bus) -> u8 {
-        let byte = self.read(bus, 0x0100 | self.stack_pointer as u16);
-
         self.stack_pointer = match self.stack_pointer.checked_add(1) {
             Some(x) => x,
             None => panic!("CPU stack underflow"),
         };
+
+        let byte = self.read(bus, 0x0100 | self.stack_pointer as u16);
 
         byte
     }
@@ -83,6 +83,10 @@ impl CPU {
 
 fn handle_invalid_addressing_mode() -> ! {
     panic!("Invalid addressing mode")
+}
+
+fn unpack_bytes(packed: u16) -> (u8, u8) {
+    ((packed & 0xFF) as u8, ((packed >> 8) & 0xFF) as u8)
 }
 
 fn pack_bytes(low_byte: u8, high_byte: u8) -> u16 {
