@@ -4,7 +4,7 @@
 /// and getting. We do this as we may have to call these nearly every cpu cycle and
 /// we dont want to have to do another check or copy another byte.
 #[derive(Debug, Clone, Copy)]
-pub struct ProcessorStatus(u8);
+pub struct ProcessorStatus(pub u8);
 
 impl ProcessorStatus {
     pub fn new() -> Self {
