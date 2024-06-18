@@ -38,9 +38,7 @@ impl CPU {
     ) -> u8 {
         let subroutine_address = pack_bytes_wrapped(low_byte, high_byte);
 
-        // for whatever reason, https://www.nesdev.org/obelisk-6502-guide/reference.html#JSR says that
-        // we only push pc - 1 to the stack instead of PC
-        let (pc_low, pc_high) = unpack_bytes(self.program_counter - 1);
+        let (pc_low, pc_high) = unpack_bytes(self.program_counter);
 
         self.push(bus, pc_high);
         self.push(bus, pc_low);
@@ -54,8 +52,7 @@ impl CPU {
         let pc_low = self.pop(bus);
         let pc_high: u8 = self.pop(bus);
 
-        // we have to add one because we subtracted 1 earlier, not sure why we have to do this exactly
-        self.program_counter = pack_bytes(pc_low, pc_high) + 1;
+        self.program_counter = pack_bytes(pc_low, pc_high);
 
         6
     }
