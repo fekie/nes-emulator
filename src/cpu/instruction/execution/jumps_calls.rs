@@ -42,8 +42,6 @@ impl CPU {
         // we only push pc - 1 to the stack instead of PC
         let (pc_low, pc_high) = unpack_bytes(self.program_counter - 1);
 
-        // we do high first and then low last as our stack goes backwards and this follows the convention of
-        // the low byte first and high byte last when popping from stack
         self.push(bus, pc_high);
         self.push(bus, pc_low);
 
