@@ -6,7 +6,7 @@ use crate::Bus;
 mod arithmetic;
 mod branches; // completed
 mod incr_decr;
-mod jumps_calls;
+mod jumps_calls; // completed
 mod load_store; // completed
 mod logical; // completed
 mod register_transfers; // completed
