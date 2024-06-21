@@ -16,13 +16,14 @@ impl CPU {
     ) -> u8 {
         match addressing_mode {
             AddressingMode::Accumulator => {
-                match (self.accumulator >> 7) != 0 {
+                match (self.accumulator & 0b1000_0000) != 0 {
                     true => self.processor_status.set_carry_flag(),
                     false => self.processor_status.clear_carry_flag(),
                 };
 
                 self.accumulator <<= 1;
 
+                self.modify_negative_flag(self.accumulator);
                 self.modify_zero_flag(self.accumulator);
 
                 2
@@ -30,13 +31,14 @@ impl CPU {
             AddressingMode::Zeropage => {
                 let mut value = zeropage_read(self, bus, low_byte);
 
-                match (value >> 7) != 0 {
+                match (value & 0b1000_0000) != 0 {
                     true => self.processor_status.set_carry_flag(),
                     false => self.processor_status.clear_carry_flag(),
                 };
 
                 value <<= 1;
 
+                self.modify_negative_flag(value);
                 self.modify_zero_flag(value);
 
                 zeropage_write(self, bus, low_byte, value);
@@ -46,13 +48,14 @@ impl CPU {
             AddressingMode::ZeropageXIndexed => {
                 let mut value = zeropage_x_read(self, bus, low_byte);
 
-                match (value >> 7) != 0 {
+                match (value & 0b1000_0000) != 0 {
                     true => self.processor_status.set_carry_flag(),
                     false => self.processor_status.clear_carry_flag(),
                 };
 
                 value <<= 1;
 
+                self.modify_negative_flag(value);
                 self.modify_zero_flag(value);
 
                 zeropage_x_write(self, bus, low_byte, value);
@@ -62,13 +65,14 @@ impl CPU {
             AddressingMode::Absolute => {
                 let mut value = absolute_read(self, bus, low_byte, high_byte);
 
-                match (value >> 7) != 0 {
+                match (value & 0b1000_0000) != 0 {
                     true => self.processor_status.set_carry_flag(),
                     false => self.processor_status.clear_carry_flag(),
                 };
 
                 value <<= 1;
 
+                self.modify_negative_flag(value);
                 self.modify_zero_flag(value);
 
                 absolute_write(self, bus, low_byte, high_byte, value);
@@ -78,13 +82,14 @@ impl CPU {
             AddressingMode::AbsoluteXIndexed => {
                 let (mut value, _) = absolute_x_read(self, bus, low_byte, high_byte);
 
-                match (value >> 7) != 0 {
+                match (value & 0b1000_0000) != 0 {
                     true => self.processor_status.set_carry_flag(),
                     false => self.processor_status.clear_carry_flag(),
                 };
 
                 value <<= 1;
 
+                self.modify_negative_flag(value);
                 self.modify_zero_flag(value);
 
                 absolute_x_write(self, bus, low_byte, high_byte, value);
@@ -102,7 +107,95 @@ impl CPU {
         low_byte: Option<u8>,
         high_byte: Option<u8>,
     ) -> u8 {
-        todo!()
+        match addressing_mode {
+            AddressingMode::Accumulator => {
+                match (self.accumulator & 0b0000_0001) != 0 {
+                    true => self.processor_status.set_carry_flag(),
+                    false => self.processor_status.clear_carry_flag(),
+                };
+
+                self.accumulator >>= 1;
+
+                // Bit 7 will always be 0 after a shift
+                self.processor_status.clear_carry_flag();
+                self.modify_zero_flag(self.accumulator);
+
+                2
+            }
+            AddressingMode::Zeropage => {
+                let mut value = zeropage_read(self, bus, low_byte);
+
+                match (value & 0b0000_0001) != 0 {
+                    true => self.processor_status.set_carry_flag(),
+                    false => self.processor_status.clear_carry_flag(),
+                };
+
+                value >>= 1;
+
+                // Bit 7 will always be 0 after a shift
+                self.processor_status.clear_carry_flag();
+                self.modify_zero_flag(value);
+
+                zeropage_write(self, bus, low_byte, value);
+
+                5
+            }
+            AddressingMode::ZeropageXIndexed => {
+                let mut value = zeropage_x_read(self, bus, low_byte);
+
+                match (value & 0b0000_0001) != 0 {
+                    true => self.processor_status.set_carry_flag(),
+                    false => self.processor_status.clear_carry_flag(),
+                };
+
+                value >>= 1;
+
+                // Bit 7 will always be 0 after a shift
+                self.processor_status.clear_carry_flag();
+                self.modify_zero_flag(value);
+
+                zeropage_x_write(self, bus, low_byte, value);
+
+                6
+            }
+            AddressingMode::Absolute => {
+                let mut value = absolute_read(self, bus, low_byte, high_byte);
+
+                match (value & 0b0000_0001) != 0 {
+                    true => self.processor_status.set_carry_flag(),
+                    false => self.processor_status.clear_carry_flag(),
+                };
+
+                value >>= 1;
+
+                // Bit 7 will always be 0 after a shift
+                self.processor_status.clear_carry_flag();
+                self.modify_zero_flag(value);
+
+                absolute_write(self, bus, low_byte, high_byte, value);
+
+                6
+            }
+            AddressingMode::AbsoluteXIndexed => {
+                let (mut value, _) = absolute_x_read(self, bus, low_byte, high_byte);
+
+                match (value & 0b0000_0001) != 0 {
+                    true => self.processor_status.set_carry_flag(),
+                    false => self.processor_status.clear_carry_flag(),
+                };
+
+                value >>= 1;
+
+                // Bit 7 will always be 0 after a shift
+                self.processor_status.clear_carry_flag();
+                self.modify_zero_flag(value);
+
+                absolute_x_write(self, bus, low_byte, high_byte, value);
+
+                7
+            }
+            _ => handle_invalid_addressing_mode(),
+        }
     }
 
     pub(crate) fn instruction_rol(
