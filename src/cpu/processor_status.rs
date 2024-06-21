@@ -95,6 +95,22 @@ impl ProcessorStatus {
 
     //
 
+    pub fn bit_5_flag(&self) -> bool {
+        self.0 & 0b0010_0000 != 0
+    }
+
+    pub fn set_bit_5_flag(&mut self) {
+        let mask = 0b0010_0000;
+        self.0 |= mask;
+    }
+
+    pub fn clear_bit_5_flag(&mut self) {
+        let mask = 0b1101_1111;
+        self.0 &= mask;
+    }
+
+    //
+
     pub fn overflow_flag(&self) -> bool {
         self.0 & 0b0100_0000 != 0
     }

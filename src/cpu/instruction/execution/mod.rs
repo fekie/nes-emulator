@@ -11,7 +11,7 @@ mod load_store; // completed
 mod logical; // completed
 mod register_transfers; // completed
 mod shifts;
-mod stack;
+mod stack; // completed
 mod status_flags; // completed
 mod system; // completed
 
