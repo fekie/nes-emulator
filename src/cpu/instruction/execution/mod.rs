@@ -5,7 +5,7 @@ use crate::Bus;
 // categories used on https://www.nesdev.org/obelisk-6502-guide/instructions.html
 mod arithmetic;
 mod branches; // completed
-mod incr_decr;
+mod incr_decr; // completed
 mod jumps_calls; // completed
 mod load_store; // completed
 mod logical; // completed
