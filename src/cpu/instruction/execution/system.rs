@@ -1,6 +1,7 @@
-use super::pack_bytes;
+use super::{pack_bytes, unpack_bytes};
 use super::{AddressingMode, CPU};
 use crate::cpu::processor_status::ProcessorStatus;
+use crate::cpu::IRQ_BRK_VECTOR_ADDRESS;
 use crate::Bus;
 
 impl CPU {
@@ -11,7 +12,12 @@ impl CPU {
         low_byte: Option<u8>,
         high_byte: Option<u8>,
     ) -> u8 {
-        todo!()
+        let (pc_low, pc_high) = unpack_bytes(self.program_counter);
+
+        self.push(bus, pc_high);
+        self.push(bus, pc_low);
+
+        self.push(bus, self.processor_status.0);
     }
 
     pub(crate) fn instruction_nop(&mut self) -> u8 {
