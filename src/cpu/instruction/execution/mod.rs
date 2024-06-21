@@ -13,7 +13,7 @@ mod register_transfers; // completed
 mod shifts;
 mod stack;
 mod status_flags; // completed
-mod system;
+mod system; // completed
 
 impl CPU {
     /// Sets the zero flag if the given byte is 0.

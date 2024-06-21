@@ -5,13 +5,7 @@ use crate::cpu::IRQ_BRK_VECTOR_ADDRESS;
 use crate::Bus;
 
 impl CPU {
-    pub(crate) fn instruction_brk(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
+    pub(crate) fn instruction_brk(&mut self, bus: &Bus) -> u8 {
         let (pc_low, pc_high) = unpack_bytes(self.program_counter);
 
         self.push(bus, pc_high);
