@@ -67,24 +67,22 @@ impl CPU {
         }
     }
 
-    pub(crate) fn instruction_inx(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
-        todo!()
+    pub(crate) fn instruction_inx(&mut self) -> u8 {
+        self.x += 1;
+
+        self.modify_zero_flag(self.x);
+        self.modify_negative_flag(self.x);
+
+        2
     }
 
-    pub(crate) fn instruction_iny(
-        &mut self,
-        bus: &Bus,
-        addressing_mode: AddressingMode,
-        low_byte: Option<u8>,
-        high_byte: Option<u8>,
-    ) -> u8 {
-        todo!()
+    pub(crate) fn instruction_iny(&mut self) -> u8 {
+        self.y += 1;
+
+        self.modify_zero_flag(self.y);
+        self.modify_negative_flag(self.y);
+
+        2
     }
 
     pub(crate) fn instruction_dec(
