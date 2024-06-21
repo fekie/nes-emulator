@@ -10,7 +10,7 @@ mod jumps_calls; // completed
 mod load_store; // completed
 mod logical; // completed
 mod register_transfers; // completed
-mod shifts;
+mod shifts; // completed
 mod stack; // completed
 mod status_flags; // completed
 mod system; // completed
