@@ -17,7 +17,13 @@ impl CPU {
         self.push(bus, pc_high);
         self.push(bus, pc_low);
 
+        self.processor_status.set_break_flag();
+
         self.push(bus, self.processor_status.0);
+
+        self.program_counter = IRQ_BRK_VECTOR_ADDRESS;
+
+        7
     }
 
     pub(crate) fn instruction_nop(&mut self) -> u8 {
