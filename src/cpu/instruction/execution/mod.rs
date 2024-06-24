@@ -4,16 +4,16 @@ use crate::Bus;
 // We organize the instructions using modules according to the
 // categories used on https://www.nesdev.org/obelisk-6502-guide/instructions.html
 mod arithmetic;
-mod branches; // completed
-mod incr_decr; // completed
-mod jumps_calls; // completed
-mod load_store; // completed
-mod logical; // completed
-mod register_transfers; // completed
-mod shifts; // completed
-mod stack; // completed
-mod status_flags; // completed
-mod system; // completed
+mod branches;
+mod incr_decr;
+mod jumps_calls;
+mod load_store;
+mod logical;
+mod register_transfers;
+mod shifts;
+mod stack;
+mod status_flags;
+mod system;
 
 impl CPU {
     /// Sets the zero flag if the given byte is 0.

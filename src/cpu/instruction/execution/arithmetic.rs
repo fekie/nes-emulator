@@ -1,7 +1,6 @@
 use super::{
-    absolute_read, absolute_write, absolute_x_read, absolute_x_write, absolute_y_read,
-    handle_invalid_addressing_mode, immediate_read, indirect_x_read, indirect_y_read,
-    zeropage_read, zeropage_write, zeropage_x_read, zeropage_x_write,
+    absolute_read, absolute_x_read, absolute_y_read, handle_invalid_addressing_mode,
+    immediate_read, indirect_x_read, indirect_y_read, zeropage_read, zeropage_x_read,
 };
 use super::{AddressingMode, CPU};
 use crate::Bus;
@@ -17,35 +16,30 @@ impl CPU {
         match addressing_mode {
             AddressingMode::Immediate => {
                 let value = immediate_read(low_byte);
-
                 self.adc_intermediate(value);
 
                 2
             }
             AddressingMode::Zeropage => {
                 let value = zeropage_read(self, bus, low_byte);
-
                 self.adc_intermediate(value);
 
                 3
             }
             AddressingMode::ZeropageXIndexed => {
                 let value = zeropage_x_read(self, bus, low_byte);
-
                 self.adc_intermediate(value);
 
                 4
             }
             AddressingMode::Absolute => {
                 let value = absolute_read(self, bus, low_byte, high_byte);
-
                 self.adc_intermediate(value);
 
                 4
             }
             AddressingMode::AbsoluteXIndexed => {
                 let (value, boundary_crossed) = absolute_x_read(self, bus, low_byte, high_byte);
-
                 self.adc_intermediate(value);
 
                 match boundary_crossed {
@@ -55,7 +49,6 @@ impl CPU {
             }
             AddressingMode::AbsoluteYIndexed => {
                 let (value, boundary_crossed) = absolute_y_read(self, bus, low_byte, high_byte);
-
                 self.adc_intermediate(value);
 
                 match boundary_crossed {
@@ -65,14 +58,12 @@ impl CPU {
             }
             AddressingMode::IndirectXIndexed => {
                 let value = indirect_x_read(self, bus, low_byte);
-
                 self.adc_intermediate(value);
 
                 6
             }
             AddressingMode::IndirectYIndexed => {
                 let (value, boundary_crossed) = indirect_y_read(self, bus, low_byte);
-
                 self.adc_intermediate(value);
 
                 match boundary_crossed {
@@ -94,35 +85,30 @@ impl CPU {
         match addressing_mode {
             AddressingMode::Immediate => {
                 let value = immediate_read(low_byte);
-
                 self.sbc_intermediate(value);
 
                 2
             }
             AddressingMode::Zeropage => {
                 let value = zeropage_read(self, bus, low_byte);
-
                 self.sbc_intermediate(value);
 
                 3
             }
             AddressingMode::ZeropageXIndexed => {
                 let value = zeropage_x_read(self, bus, low_byte);
-
                 self.sbc_intermediate(value);
 
                 4
             }
             AddressingMode::Absolute => {
                 let value = absolute_read(self, bus, low_byte, high_byte);
-
                 self.sbc_intermediate(value);
 
                 4
             }
             AddressingMode::AbsoluteXIndexed => {
                 let (value, boundary_crossed) = absolute_x_read(self, bus, low_byte, high_byte);
-
                 self.sbc_intermediate(value);
 
                 match boundary_crossed {
@@ -132,7 +118,6 @@ impl CPU {
             }
             AddressingMode::AbsoluteYIndexed => {
                 let (value, boundary_crossed) = absolute_y_read(self, bus, low_byte, high_byte);
-
                 self.sbc_intermediate(value);
 
                 match boundary_crossed {
@@ -142,14 +127,12 @@ impl CPU {
             }
             AddressingMode::IndirectXIndexed => {
                 let value = indirect_x_read(self, bus, low_byte);
-
                 self.sbc_intermediate(value);
 
                 6
             }
             AddressingMode::IndirectYIndexed => {
                 let (value, boundary_crossed) = indirect_y_read(self, bus, low_byte);
-
                 self.sbc_intermediate(value);
 
                 match boundary_crossed {
@@ -171,35 +154,30 @@ impl CPU {
         match addressing_mode {
             AddressingMode::Immediate => {
                 let value = immediate_read(low_byte);
-
                 self.cmp_intermediate(value);
 
                 2
             }
             AddressingMode::Zeropage => {
                 let value = zeropage_read(self, bus, low_byte);
-
                 self.cmp_intermediate(value);
 
                 3
             }
             AddressingMode::ZeropageXIndexed => {
                 let value = zeropage_x_read(self, bus, low_byte);
-
                 self.cmp_intermediate(value);
 
                 4
             }
             AddressingMode::Absolute => {
                 let value = absolute_read(self, bus, low_byte, high_byte);
-
                 self.cmp_intermediate(value);
 
                 4
             }
             AddressingMode::AbsoluteXIndexed => {
                 let (value, boundary_crossed) = absolute_x_read(self, bus, low_byte, high_byte);
-
                 self.cmp_intermediate(value);
 
                 match boundary_crossed {
@@ -209,7 +187,6 @@ impl CPU {
             }
             AddressingMode::AbsoluteYIndexed => {
                 let (value, boundary_crossed) = absolute_y_read(self, bus, low_byte, high_byte);
-
                 self.cmp_intermediate(value);
 
                 match boundary_crossed {
@@ -219,14 +196,12 @@ impl CPU {
             }
             AddressingMode::IndirectXIndexed => {
                 let value = indirect_x_read(self, bus, low_byte);
-
                 self.cmp_intermediate(value);
 
                 6
             }
             AddressingMode::IndirectYIndexed => {
                 let (value, boundary_crossed) = indirect_y_read(self, bus, low_byte);
-
                 self.cmp_intermediate(value);
 
                 match boundary_crossed {
@@ -245,7 +220,66 @@ impl CPU {
         low_byte: Option<u8>,
         high_byte: Option<u8>,
     ) -> u8 {
-        todo!()
+        match addressing_mode {
+            AddressingMode::Immediate => {
+                let value = immediate_read(low_byte);
+                self.cpx_intermediate(value);
+
+                2
+            }
+            AddressingMode::Zeropage => {
+                let value = zeropage_read(self, bus, low_byte);
+                self.cpx_intermediate(value);
+
+                3
+            }
+            AddressingMode::ZeropageXIndexed => {
+                let value = zeropage_x_read(self, bus, low_byte);
+                self.cpx_intermediate(value);
+
+                4
+            }
+            AddressingMode::Absolute => {
+                let value = absolute_read(self, bus, low_byte, high_byte);
+                self.cpx_intermediate(value);
+
+                4
+            }
+            AddressingMode::AbsoluteXIndexed => {
+                let (value, boundary_crossed) = absolute_x_read(self, bus, low_byte, high_byte);
+                self.cpx_intermediate(value);
+
+                match boundary_crossed {
+                    true => 5,
+                    false => 4,
+                }
+            }
+            AddressingMode::AbsoluteYIndexed => {
+                let (value, boundary_crossed) = absolute_y_read(self, bus, low_byte, high_byte);
+                self.cpx_intermediate(value);
+
+                match boundary_crossed {
+                    true => 5,
+                    false => 4,
+                }
+            }
+            AddressingMode::IndirectXIndexed => {
+                let value = indirect_x_read(self, bus, low_byte);
+                self.cpx_intermediate(value);
+
+                6
+            }
+            AddressingMode::IndirectYIndexed => {
+                let (value, boundary_crossed) = indirect_y_read(self, bus, low_byte);
+                self.cpx_intermediate(value);
+
+                match boundary_crossed {
+                    true => 6,
+                    false => 5,
+                }
+            }
+            _ => handle_invalid_addressing_mode(),
+        }
     }
 
     pub(crate) fn instruction_cpy(
@@ -255,7 +289,66 @@ impl CPU {
         low_byte: Option<u8>,
         high_byte: Option<u8>,
     ) -> u8 {
-        todo!()
+        match addressing_mode {
+            AddressingMode::Immediate => {
+                let value = immediate_read(low_byte);
+                self.cpy_intermediate(value);
+
+                2
+            }
+            AddressingMode::Zeropage => {
+                let value = zeropage_read(self, bus, low_byte);
+                self.cpy_intermediate(value);
+
+                3
+            }
+            AddressingMode::ZeropageXIndexed => {
+                let value = zeropage_x_read(self, bus, low_byte);
+                self.cpy_intermediate(value);
+
+                4
+            }
+            AddressingMode::Absolute => {
+                let value = absolute_read(self, bus, low_byte, high_byte);
+                self.cpy_intermediate(value);
+
+                4
+            }
+            AddressingMode::AbsoluteXIndexed => {
+                let (value, boundary_crossed) = absolute_x_read(self, bus, low_byte, high_byte);
+                self.cpy_intermediate(value);
+
+                match boundary_crossed {
+                    true => 5,
+                    false => 4,
+                }
+            }
+            AddressingMode::AbsoluteYIndexed => {
+                let (value, boundary_crossed) = absolute_y_read(self, bus, low_byte, high_byte);
+                self.cpy_intermediate(value);
+
+                match boundary_crossed {
+                    true => 5,
+                    false => 4,
+                }
+            }
+            AddressingMode::IndirectXIndexed => {
+                let value = indirect_x_read(self, bus, low_byte);
+                self.cpy_intermediate(value);
+
+                6
+            }
+            AddressingMode::IndirectYIndexed => {
+                let (value, boundary_crossed) = indirect_y_read(self, bus, low_byte);
+                self.cpy_intermediate(value);
+
+                match boundary_crossed {
+                    true => 6,
+                    false => 5,
+                }
+            }
+            _ => handle_invalid_addressing_mode(),
+        }
     }
 }
 
@@ -350,6 +443,30 @@ impl CPU {
         let compared_value = self.accumulator.wrapping_sub(value);
 
         match self.accumulator >= value {
+            true => self.processor_status.set_carry_flag(),
+            false => self.processor_status.clear_carry_flag(),
+        }
+
+        self.modify_zero_flag(compared_value);
+        self.modify_negative_flag(compared_value);
+    }
+
+    fn cpx_intermediate(&mut self, value: u8) {
+        let compared_value = self.x.wrapping_sub(value);
+
+        match self.x >= value {
+            true => self.processor_status.set_carry_flag(),
+            false => self.processor_status.clear_carry_flag(),
+        }
+
+        self.modify_zero_flag(compared_value);
+        self.modify_negative_flag(compared_value);
+    }
+
+    fn cpy_intermediate(&mut self, value: u8) {
+        let compared_value = self.y.wrapping_sub(value);
+
+        match self.y >= value {
             true => self.processor_status.set_carry_flag(),
             false => self.processor_status.clear_carry_flag(),
         }
