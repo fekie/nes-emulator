@@ -209,7 +209,10 @@ impl CPU {
 
 // We use 2KB of work ram.
 #[derive(Debug)]
+#[cfg(not(harte))]
 pub struct WorkRAM([u8; 0x800]);
+#[cfg(harte)]
+pub struct WorkRAM([u8; 0x10000]);
 
 /// Memory Map:
 ///
@@ -241,6 +244,12 @@ impl CpuMemoryMapper {
 
 impl Mapper for CpuMemoryMapper {
     fn read(&self, bus: &Bus, address: u16) -> u8 {
+        // harte's tests (https://github.com/SingleStepTests/ProcessorTests/tree/main/nes6502)
+        // require the entire address space mapped to RAM
+        #[cfg(harte)]
+        self.work_ram.0[address as usize];
+
+        #[cfg(not(harte))]
         match address {
             // Handle the work RAM and the mirrors.
             0x0000..=0x1FFF => self.work_ram.0[address as usize % 0x0800],
