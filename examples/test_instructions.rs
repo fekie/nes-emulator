@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 pub struct Example {
     name: String,
     #[serde(rename = "initial")]
-    initial_state: FinalRaw,
+    initial_state: CpuState,
     #[serde(rename = "final")]
-    final_state: FinalRaw,
+    final_state: CpuState,
     cycles: Vec<Vec<CyclePart>>,
 }
 
@@ -18,13 +18,13 @@ pub enum CyclePart {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct FinalRaw {
-    pc: i64,
-    s: i64,
-    a: i64,
-    x: i64,
-    y: i64,
-    p: i64,
+pub struct CpuState {
+    pc: u64,
+    s: u64,
+    a: u64,
+    x: u64,
+    y: u64,
+    p: u64,
     ram: Vec<Vec<u64>>,
 }
 

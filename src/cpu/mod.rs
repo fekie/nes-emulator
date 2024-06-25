@@ -26,6 +26,18 @@ pub struct CPU {
     pub initialized: bool,
 }
 
+#[cfg(harte)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CpuState {
+    pc: u64,
+    s: u64,
+    a: u64,
+    x: u64,
+    y: u64,
+    p: u64,
+    ram: Vec<Vec<u64>>,
+}
+
 impl CPU {
     /// Creates a new CPU but does not initialize it as it needs to be connected
     /// to the bus to initialize. You can initialize it with [`Self::initialize`].
@@ -41,6 +53,11 @@ impl CPU {
             memory_mapper: CpuMemoryMapper::new(),
             initialized: false,
         }
+    }
+
+    #[cfg(harte)]
+    pub fn new_with_state() -> Self {
+        todo!()
     }
 
     /// Initializes the CPU to a state ready to run instructions.
@@ -273,7 +290,9 @@ impl Mapper for CpuMemoryMapper {
                 bus.ppu.borrow_mut().registers[((address - 0x2000) % 8) as usize] = byte
             }
             // Saved for APU
-            0x4000..=0x4017 => unimplemented!(),
+            0x4000..=0x4017 => {
+                // do nothing for now
+            },
             // Disabled
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
