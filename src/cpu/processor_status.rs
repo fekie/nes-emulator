@@ -4,7 +4,7 @@
 /// and getting. We do this as we may have to call these nearly every cpu cycle and
 /// we dont want to have to do another check or copy another byte.
 #[derive(Debug, Clone, Copy)]
-pub struct ProcessorStatus(u8);
+pub struct ProcessorStatus(pub u8);
 
 impl ProcessorStatus {
     pub fn new() -> Self {
@@ -90,6 +90,22 @@ impl ProcessorStatus {
 
     pub fn clear_break_flag(&mut self) {
         let mask = 0b1110_1111;
+        self.0 &= mask;
+    }
+
+    //
+
+    pub fn bit_5_flag(&self) -> bool {
+        self.0 & 0b0010_0000 != 0
+    }
+
+    pub fn set_bit_5_flag(&mut self) {
+        let mask = 0b0010_0000;
+        self.0 |= mask;
+    }
+
+    pub fn clear_bit_5_flag(&mut self) {
+        let mask = 0b1101_1111;
         self.0 &= mask;
     }
 

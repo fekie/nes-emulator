@@ -26,6 +26,18 @@ pub struct CPU {
     pub initialized: bool,
 }
 
+#[cfg(harte)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CpuState {
+    pc: u64,
+    s: u64,
+    a: u64,
+    x: u64,
+    y: u64,
+    p: u64,
+    ram: Vec<Vec<u64>>,
+}
+
 impl CPU {
     /// Creates a new CPU but does not initialize it as it needs to be connected
     /// to the bus to initialize. You can initialize it with [`Self::initialize`].
@@ -41,6 +53,11 @@ impl CPU {
             memory_mapper: CpuMemoryMapper::new(),
             initialized: false,
         }
+    }
+
+    #[cfg(harte)]
+    pub fn new_with_state() -> Self {
+        todo!()
     }
 
     /// Initializes the CPU to a state ready to run instructions.
@@ -122,15 +139,15 @@ impl CPU {
             Opcode::AND => self.instruction_and(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::ASL => self.instruction_asl(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::BCC => self.instruction_bcc(instruction.low_byte),
-            Opcode::BCS => self.instruction_bcs(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BEQ => self.instruction_beq(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::BCS => self.instruction_bcs(instruction.low_byte),
+            Opcode::BEQ => self.instruction_beq(instruction.low_byte),
             Opcode::BIT => self.instruction_bit(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BMI => self.instruction_bmi(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BNE => self.instruction_bne(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BPL => self.instruction_bpl(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BRK => self.instruction_brk(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BVC => self.instruction_bvc(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::BVS => self.instruction_bvs(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::BMI => self.instruction_bmi(instruction.low_byte),
+            Opcode::BNE => self.instruction_bne(instruction.low_byte),
+            Opcode::BPL => self.instruction_bpl(instruction.low_byte),
+            Opcode::BRK => self.instruction_brk(bus),
+            Opcode::BVC => self.instruction_bvc(instruction.low_byte),
+            Opcode::BVS => self.instruction_bvs(instruction.low_byte),
             Opcode::CLC => self.instruction_clc(),
             Opcode::CLD => self.instruction_cld(),
             Opcode::CLI => self.instruction_cli(),
@@ -139,28 +156,28 @@ impl CPU {
             Opcode::CPX => self.instruction_cpx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::CPY => self.instruction_cpy(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::DEC => self.instruction_dec(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::DEX => self.instruction_dex(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::DEY => self.instruction_dey(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::DEX => self.instruction_dex(),
+            Opcode::DEY => self.instruction_dey(),
             Opcode::EOR => self.instruction_eor(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::INC => self.instruction_inc(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::INX => self.instruction_inx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::INY => self.instruction_iny(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::INX => self.instruction_inx(),
+            Opcode::INY => self.instruction_iny(),
             Opcode::JMP => self.instruction_jmp(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::JSR => self.instruction_jsr(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::JSR => self.instruction_jsr(bus, instruction.low_byte, instruction.high_byte),
             Opcode::LDA => self.instruction_lda(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::LDX => self.instruction_ldx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::LDY => self.instruction_ldy(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::LSR => self.instruction_lsr(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::NOP => self.instruction_nop(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::NOP => self.instruction_nop(),
             Opcode::ORA => self.instruction_ora(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::PHA => self.instruction_pha(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::PHP => self.instruction_php(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::PLA => self.instruction_pla(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::PLP => self.instruction_plp(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::PHA => self.instruction_pha(bus),
+            Opcode::PHP => self.instruction_php(bus),
+            Opcode::PLA => self.instruction_pla(bus),
+            Opcode::PLP => self.instruction_plp(bus),
             Opcode::ROL => self.instruction_rol(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::ROR => self.instruction_ror(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::RTI => self.instruction_rti(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
-            Opcode::RTS => self.instruction_rts(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::RTI => self.instruction_rti(bus),
+            Opcode::RTS => self.instruction_rts(bus),
             Opcode::SBC => self.instruction_sbc(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::SEC => self.instruction_sec(),
             Opcode::SED => self.instruction_sed(),
@@ -170,9 +187,9 @@ impl CPU {
             Opcode::STY => self.instruction_sty(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
             Opcode::TAX => self.instruction_tax(),
             Opcode::TAY => self.instruction_tay(),
-            Opcode::TSX => self.instruction_tsx(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::TSX => self.instruction_tsx(),
             Opcode::TXA => self.instruction_txa(),
-            Opcode::TXS => self.instruction_txs(bus, instruction.addressing_mode, instruction.low_byte, instruction.high_byte),
+            Opcode::TXS => self.instruction_txs(),
             Opcode::TYA => self.instruction_tya(),
         }
     }
@@ -209,7 +226,10 @@ impl CPU {
 
 // We use 2KB of work ram.
 #[derive(Debug)]
+#[cfg(not(harte))]
 pub struct WorkRAM([u8; 0x800]);
+#[cfg(harte)]
+pub struct WorkRAM([u8; 0x10000]);
 
 /// Memory Map:
 ///
@@ -241,6 +261,12 @@ impl CpuMemoryMapper {
 
 impl Mapper for CpuMemoryMapper {
     fn read(&self, bus: &Bus, address: u16) -> u8 {
+        // harte's tests (https://github.com/SingleStepTests/ProcessorTests/tree/main/nes6502)
+        // require the entire address space mapped to RAM
+        #[cfg(harte)]
+        self.work_ram.0[address as usize];
+
+        #[cfg(not(harte))]
         match address {
             // Handle the work RAM and the mirrors.
             0x0000..=0x1FFF => self.work_ram.0[address as usize % 0x0800],
@@ -264,7 +290,9 @@ impl Mapper for CpuMemoryMapper {
                 bus.ppu.borrow_mut().registers[((address - 0x2000) % 8) as usize] = byte
             }
             // Saved for APU
-            0x4000..=0x4017 => unimplemented!(),
+            0x4000..=0x4017 => {
+                // do nothing for now
+            },
             // Disabled
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
