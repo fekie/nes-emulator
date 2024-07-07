@@ -1,41 +1,43 @@
 use crate::{
-    bus::{Bus, Interrupts},
+    bus::{BusPointer, Interrupts},
     ines::Ines,
     ClockableMapper,
 };
 
 const KB: usize = 1024;
 
-pub struct Cartridge(Box<dyn ClockableMapper>);
-
-impl From<Ines> for Cartridge {
-    fn from(ines: Ines) -> Self {
-        let mapper = select_mapper(ines);
-
-        Self(mapper)
-    }
+pub struct Cartridge {
+    mapper: Box<dyn ClockableMapper>,
+    bus: BusPointer,
 }
 
 impl Cartridge {
-    /// Initialize the APU.
+    /// Creates a new cartridge from a ROM in the INES format.
+    pub fn new(rom: Ines, bus: BusPointer) -> Self {
+        let mapper = select_mapper(rom);
+
+        Self { mapper, bus }
+    }
+
     pub fn initialize(&mut self) {
-        self.0.initialize();
+        self.mapper.initialize();
     }
 
     pub fn initialized(&self) -> bool {
-        self.0.initialized()
+        self.mapper.initialized()
     }
 
     pub fn read(&self, address: u16) -> u8 {
-        self.0.read(address)
+        self.mapper.read(address)
     }
 
     pub fn write(&mut self, address: u16, byte: u8) {
-        self.0.write(address, byte)
+        self.mapper.write(address, byte)
     }
 
-    pub fn clock(&mut self, interrupts: &Interrupts) {
-        self.0.clock(interrupts);
+    pub fn clock(&mut self) {
+        self.mapper
+            .clock(&self.bus.borrow().interrupts.0.as_ref().unwrap().borrow());
     }
 }
 

@@ -4,6 +4,7 @@ use bus::Bus;
 use cartridge::Cartridge;
 use clap::Parser;
 use ines::Ines;
+use lazy_static::lazy_static;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
 use std::thread::spawn;
@@ -25,7 +26,6 @@ const TARGET_FPS: usize = 60;
 mod apu;
 mod bus;
 mod cartridge;
-#[allow(clippy::new_without_default)]
 mod cpu;
 mod debug;
 mod ines;
@@ -82,10 +82,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
-        let cartridge: Cartridge = rom.into();
+        let bus = Bus::initialize(Bus::empty(), rom);
 
-        let mut bus = Bus::new(cartridge);
-        bus.initialize();
+        /* let mut bus = Bus::new(cartridge);
+        bus.initialize(); */
 
         //let cpu = bus.cpu.borrow();
 
@@ -102,12 +102,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Each time we do a cpu instruction, find out how many clock cycles it
             // took, multiply by 12, and then run that many master clock cycles on the bus.
             loop {
-                let cpu_cycles_taken = bus.clock_cpu();
+                let cpu_cycles_taken = bus.borrow().clock_cpu();
 
                 available_cpu_cycles -= cpu_cycles_taken as i64;
 
                 let machine_cycles_taken = cpu_cycles_taken * CLOCK_DIVISOR as u8;
-                bus.clock_bus(machine_cycles_taken);
+                bus.borrow_mut().clock_bus(machine_cycles_taken);
 
                 // If we're out of cpu cycles, record how much we went over and then
                 // stop running cycles until the next request

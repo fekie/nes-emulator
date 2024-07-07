@@ -1,19 +1,22 @@
+use crate::bus::BusPointer;
 use crate::{bus::Bus, cartridge::Cartridge};
+use std::{cell::RefCell, rc::Rc};
 
 #[allow(clippy::upper_case_acronyms)]
-#[derive(Debug)]
-pub struct PPU {
+pub struct Ppu {
     pub registers: [u8; 8],
-    initialized: bool,
+    pub bus: BusPointer,
+    pub initialized: bool,
 }
 
-impl PPU {
+impl Ppu {
     /// Creates the PPU but does not initialize it. Please run [`Initialize`] to
     /// initialize the PPU.
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub fn new(bus: BusPointer) -> Self {
         Self {
             registers: [0; 8],
+            bus,
             initialized: false,
         }
     }
@@ -28,7 +31,7 @@ impl PPU {
         self.initialized
     }
 
-    pub fn tick(&mut self, cartridge: &Cartridge) {
+    pub fn tick(&mut self) {
         // do nothing right now
     }
 }
