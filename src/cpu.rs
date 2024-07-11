@@ -1,14 +1,6 @@
-use crate::{
-    apu::Apu,
-    cartridge::{self, Cartridge},
-    ppu::{self, Ppu},
-};
+use crate::{apu::Apu, cartridge::Cartridge, ppu::Ppu};
 use nes6502::{Cpu, Interrupts, Mapper};
 use std::{cell::RefCell, rc::Rc};
-
-const STACK_POINTER_STARTING_VALUE: u8 = 0xFD;
-const RESET_VECTOR_ADDRESS: u16 = 0xFFFC;
-const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 
 /// We use a container that holds both interrupt states. Each interrupt state is stored in an
 /// `Rc<Refcell<bool>>` internally so that we can use [`InterruptsContainer::share()`] to create a new
@@ -48,7 +40,6 @@ impl Interrupts for InterruptsContainer {
 }
 
 /// A container that holds the CPU + Interrupts. Interrupts can be accessed by using `Cpu.interrupts`.
-
 pub struct CpuContainer(pub Cpu<CpuMemoryMapper, InterruptsContainer>);
 
 impl CpuContainer {

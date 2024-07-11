@@ -1,5 +1,4 @@
-use crate::cpu::{self, CpuContainer};
-use crate::ppu;
+use crate::cpu::CpuContainer;
 use crate::{ines::Ines, ppu::Ppu};
 use std::cell::RefCell;
 use std::rc::Rc;

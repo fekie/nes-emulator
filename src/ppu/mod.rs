@@ -1,5 +1,3 @@
-use nes6502::Cpu;
-
 use crate::cpu::CpuContainer;
 use std::{cell::RefCell, rc::Rc};
 

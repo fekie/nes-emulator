@@ -28,18 +28,11 @@ const PPU_CLOCK_DIVISOR: u8 = 4;
 const TARGET_FPS: usize = 60;
 
 mod apu;
-mod bus;
 mod cartridge;
 mod cpu;
 mod debug;
 mod ines;
 mod ppu;
-
-/* pub trait Mapper {
-    fn read(&self, bus: &Bus, address: u16) -> u8;
-
-    fn write(&mut self, bus: &Bus, address: u16, byte: u8);
-} */
 
 pub struct MapperType {}
 
@@ -88,13 +81,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert!(apu.borrow().initialized());
         assert!(cartridge.borrow().initialized());
 
-        //let bus = Bus::initialize(Bus::empty(), rom);
-
-        /* let mut bus = Bus::new(cartridge);
-        bus.initialize(); */
-
-        //let cpu = bus.cpu.borrow();
-
         // If we execute an instruction and it takes more cycles than we have available,
         // then we store the amount here (as a negative number) that we need to take off.
         let mut cpu_cycle_debt: i64 = 0;
@@ -111,12 +97,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Each time we do a cpu instruction, find out how many clock cycles it
             // took, multiply by 12, and then run that many master clock cycles on the bus.
             loop {
+                // run a cpu full instruction cycle and see how many cpu cycles were taken
                 let cpu_cycles_taken = cpu.borrow_mut().cycle();
 
                 available_cpu_cycles -= cpu_cycles_taken as i64;
 
                 let machine_cycles_taken = cpu_cycles_taken * CLOCK_DIVISOR as u8;
-                //bus.borrow_mut().clock_bus(machine_cycles_taken);
 
                 for _ in 0..machine_cycles_taken {
                     // clock ppu every 4 cycles
