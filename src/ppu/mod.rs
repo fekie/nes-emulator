@@ -1,4 +1,4 @@
-use crate::cpu::CpuContainer;
+use crate::{cpu::CpuContainer, Pixels};
 use std::{cell::RefCell, rc::Rc};
 
 #[allow(clippy::upper_case_acronyms)]
@@ -31,7 +31,7 @@ impl Ppu {
         self.initialized
     }
 
-    pub fn clock(&mut self) {
+    pub fn clock(&mut self, pixels: &Pixels) {
         // do nothing right now
     }
 }
