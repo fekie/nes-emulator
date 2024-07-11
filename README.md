@@ -1,4 +1,4 @@
 # nes-emulator
 
-Resources:
-https://www.nesdev.org/wiki/Programming_guide
+# WIP
+- The CPU is completed and can be found at [nes6502](https://github.com/fekie/nes6502)
