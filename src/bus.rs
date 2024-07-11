@@ -117,9 +117,7 @@ impl Bus {
         }
     }
 
-    pub fn initialize(mut self, rom: Ines) -> Rc<RefCell<Self>> {
-        let bus: Rc<RefCell<Bus>> = Rc::new(RefCell::new(self));
-
+    pub fn initialize(&mut self, rom: Ines) -> Rc<RefCell<Self>> {
         let cpu = Cpu::new(CpuMemoryMapper::new(Rc::clone(&bus)));
         let ppu = Ppu::new(Rc::clone(&bus));
         let apu = Apu::new(Rc::clone(&bus));

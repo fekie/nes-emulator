@@ -1,6 +1,41 @@
 use crate::bus::Bus;
-use nes6502::Mapper;
+use nes6502::{Cpu, Interrupts, Mapper};
 use std::{cell::RefCell, rc::Rc};
+
+/// We use a container that holds both interrupt states. Each interrupt state is stored in an
+/// `Rc<Refcell<bool>>` internally so that we can use [`InterruptsContainer::share()`] to create a new
+/// container with the same references so that other components can modify the interrupt states.
+/// As [`InterruptsContainer`] still implements [`Interrupts`], it still meets the generic requirements of [`Cpu`].
+///
+/// One thing to note of this structure is that the program will panic if more than a single mutable borrow occurs,
+/// or if a mutable borrow while immutable borrows exist occurs.
+pub struct InterruptsContainer {
+    interrupt_state: Rc<RefCell<bool>>,
+    non_maskable_interrupt_state: Rc<RefCell<bool>>,
+}
+
+impl Interrupts for InterruptsContainer {
+    fn interrupt_state(&self) -> bool {
+        *self.interrupt_state.borrow()
+    }
+
+    fn set_interrupt_state(&mut self, new_state: bool) {
+        *self.interrupt_state.borrow_mut() = new_state;
+    }
+
+    fn non_maskable_interrupt_state(&self) -> bool {
+        *self.non_maskable_interrupt_state.borrow()
+    }
+
+    fn set_non_maskable_interrupt_state(&mut self, new_state: bool) {
+        *self.non_maskable_interrupt_state.borrow_mut() = new_state;
+    }
+}
+
+pub struct CpuContainer {
+    pub cpu: Cpu<CpuMemoryMapper, InterruptsContainer>,
+    pub interrupts: InterruptsContainer,
+}
 
 pub struct CpuMemoryMapper {
     ram: [u8; 0x2000],

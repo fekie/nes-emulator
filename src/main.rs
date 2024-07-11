@@ -82,10 +82,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
-        let bus = Bus::initialize(Bus::empty(), rom);
+        //let bus = Bus::initialize(Bus::empty(), rom);
 
-        /* let mut bus = Bus::new(cartridge);
-        bus.initialize(); */
+        let mut bus = Bus::new(cartridge);
+        bus.initialize();
 
         //let cpu = bus.cpu.borrow();
 
