@@ -1,6 +1,14 @@
-use crate::bus::Bus;
+use crate::{
+    apu::Apu,
+    cartridge::{self, Cartridge},
+    ppu::{self, Ppu},
+};
 use nes6502::{Cpu, Interrupts, Mapper};
 use std::{cell::RefCell, rc::Rc};
+
+const STACK_POINTER_STARTING_VALUE: u8 = 0xFD;
+const RESET_VECTOR_ADDRESS: u16 = 0xFFFC;
+const IRQ_BRK_VECTOR_ADDRESS: u16 = 0xFFFE;
 
 /// We use a container that holds both interrupt states. Each interrupt state is stored in an
 /// `Rc<Refcell<bool>>` internally so that we can use [`InterruptsContainer::share()`] to create a new
@@ -9,45 +17,104 @@ use std::{cell::RefCell, rc::Rc};
 ///
 /// One thing to note of this structure is that the program will panic if more than a single mutable borrow occurs,
 /// or if a mutable borrow while immutable borrows exist occurs.
+#[derive(Default, Debug)]
 pub struct InterruptsContainer {
-    interrupt_state: Rc<RefCell<bool>>,
-    non_maskable_interrupt_state: Rc<RefCell<bool>>,
+    interrupt_state: bool,
+    non_maskable_interrupt_state: bool,
+}
+
+impl InterruptsContainer {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 impl Interrupts for InterruptsContainer {
     fn interrupt_state(&self) -> bool {
-        *self.interrupt_state.borrow()
+        self.interrupt_state
     }
 
     fn set_interrupt_state(&mut self, new_state: bool) {
-        *self.interrupt_state.borrow_mut() = new_state;
+        self.interrupt_state = new_state;
     }
 
     fn non_maskable_interrupt_state(&self) -> bool {
-        *self.non_maskable_interrupt_state.borrow()
+        self.non_maskable_interrupt_state
     }
 
     fn set_non_maskable_interrupt_state(&mut self, new_state: bool) {
-        *self.non_maskable_interrupt_state.borrow_mut() = new_state;
+        self.non_maskable_interrupt_state = new_state;
     }
 }
 
-pub struct CpuContainer {
-    pub cpu: Cpu<CpuMemoryMapper, InterruptsContainer>,
-    pub interrupts: InterruptsContainer,
+/// A container that holds the CPU + Interrupts. Interrupts can be accessed by using `Cpu.interrupts`.
+
+pub struct CpuContainer(pub Cpu<CpuMemoryMapper, InterruptsContainer>);
+
+impl CpuContainer {
+    pub fn new() -> Self {
+        let memory_mapper = CpuMemoryMapper::new();
+        let interrupts_container = InterruptsContainer::new();
+        CpuContainer(Cpu::new(memory_mapper, interrupts_container))
+    }
+
+    /// Initializes the registers, memory, and interrupts. It also pairs other components to
+    /// the CPU (such as PPU and Cartridge).
+    pub fn initialize(
+        &mut self,
+        ppu: Rc<RefCell<Ppu>>,
+        apu: Rc<RefCell<Apu>>,
+        cartridge: Rc<RefCell<Cartridge>>,
+    ) {
+        self.0.memory_mapper.initialize(ppu, apu, cartridge);
+        self.0.initialize();
+    }
+
+    pub fn initialized(&self) -> bool {
+        self.0.initialized() && self.0.memory_mapper.initialized()
+    }
+
+    /// Runs a full instruction cycle. Returns the amount of
+    /// cpu cycles taken.
+    pub fn cycle(&mut self) -> u8 {
+        self.0.cycle()
+    }
 }
 
 pub struct CpuMemoryMapper {
     ram: [u8; 0x2000],
-    bus: Rc<RefCell<Bus>>,
+    ppu: Option<Rc<RefCell<Ppu>>>,
+    apu: Option<Rc<RefCell<Apu>>>,
+    cartridge: Option<Rc<RefCell<Cartridge>>>,
+    initialized: bool,
 }
 
 impl CpuMemoryMapper {
-    pub fn new(bus: Rc<RefCell<Bus>>) -> Self {
+    fn new() -> Self {
         Self {
             ram: [0; 0x2000],
-            bus,
+            ppu: None,
+            apu: None,
+            cartridge: None,
+            initialized: false,
         }
+    }
+
+    fn initialize(
+        &mut self,
+        ppu: Rc<RefCell<Ppu>>,
+        apu: Rc<RefCell<Apu>>,
+        cartridge: Rc<RefCell<Cartridge>>,
+    ) {
+        self.ppu = Some(ppu);
+        self.apu = Some(apu);
+        self.cartridge = Some(cartridge);
+
+        self.initialized = true;
+    }
+
+    fn initialized(&self) -> bool {
+        self.initialized
     }
 }
 
@@ -58,23 +125,14 @@ impl Mapper for CpuMemoryMapper {
             0x0000..=0x1FFF => self.ram[address as usize % 0x0800],
             // Handle PPU registers and the mirrors.
             0x2000..=0x3FFF => {
-                self.bus.borrow().ppu.0.as_ref().unwrap().borrow().registers
-                    [((address - 0x2000) % 8) as usize]
+                self.ppu.as_ref().unwrap().borrow().registers[((address - 0x2000) % 8) as usize]
             }
             // Saved for APU
             0x4000..=0x4017 => unimplemented!(),
             // Disabled
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
-            0x4020..=0xFFFF => self
-                .bus
-                .borrow()
-                .cartridge
-                .0
-                .as_ref()
-                .unwrap()
-                .borrow()
-                .read(address),
+            0x4020..=0xFFFF => self.cartridge.as_ref().unwrap().borrow().read(address),
         }
     }
 
@@ -84,14 +142,8 @@ impl Mapper for CpuMemoryMapper {
             0x0000..=0x1FFF => self.ram[address as usize % 0x0800] = byte,
             // Handle PPU registers and the mirrors.
             0x2000..=0x3FFF => {
-                self.bus
-                    .borrow()
-                    .ppu
-                    .0
-                    .as_ref()
-                    .unwrap()
-                    .borrow_mut()
-                    .registers[((address - 0x2000) % 8) as usize] = byte
+                self.ppu.as_ref().unwrap().borrow_mut().registers
+                    [((address - 0x2000) % 8) as usize] = byte
             }
             // Saved for APU
             0x4000..=0x4017 => {
@@ -101,10 +153,7 @@ impl Mapper for CpuMemoryMapper {
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
             0x4020..=0xFFFF => self
-                .bus
-                .borrow()
                 .cartridge
-                .0
                 .as_ref()
                 .unwrap()
                 .borrow_mut()

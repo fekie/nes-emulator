@@ -1,12 +1,15 @@
 //! System info:
-use crate::bus::Interrupts;
-use bus::Bus;
+use apu::Apu;
 use cartridge::Cartridge;
 use clap::Parser;
+use cpu::CpuContainer;
 use ines::Ines;
 use lazy_static::lazy_static;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
+use ppu::Ppu;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::thread::spawn;
 use std::time::Instant;
 
@@ -21,6 +24,7 @@ const CLOCK_DIVISOR: u64 = 12;
 const CPU_HZ: u64 = CORE_CLOCK_HZ / CLOCK_DIVISOR;
 const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
 
+const PPU_CLOCK_DIVISOR: u8 = 4;
 const TARGET_FPS: usize = 60;
 
 mod apu;
@@ -31,25 +35,11 @@ mod debug;
 mod ines;
 mod ppu;
 
-pub trait Mapper {
+/* pub trait Mapper {
     fn read(&self, bus: &Bus, address: u16) -> u8;
 
     fn write(&mut self, bus: &Bus, address: u16, byte: u8);
-}
-
-pub trait ClockableMapper {
-    fn read(&self, address: u16) -> u8;
-
-    fn write(&mut self, address: u16, byte: u8);
-
-    fn clock(&mut self, interrupts: &Interrupts);
-
-    /// Initialize the APU.
-    fn initialize(&mut self);
-
-    /// Returns the state of initialization.
-    fn initialized(&self) -> bool;
-}
+} */
 
 pub struct MapperType {}
 
@@ -82,16 +72,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // After every frame, we process the appropriate amount of clock cycles.
     let _ = spawn(move || {
+        let cpu = Rc::new(RefCell::new(CpuContainer::new()));
+        let ppu = Rc::new(RefCell::new(Ppu::new()));
+        let apu = Rc::new(RefCell::new(Apu::new()));
+        let cartridge = Rc::new(RefCell::new(Cartridge::new(rom)));
+
+        cpu.borrow_mut()
+            .initialize(ppu.clone(), apu.clone(), cartridge.clone());
+        ppu.borrow_mut().initialize(cpu.clone());
+        apu.borrow_mut().initialize();
+        cartridge.borrow_mut().initialize(cpu.clone(), ppu.clone());
+
+        assert!(cpu.borrow().initialized());
+        assert!(ppu.borrow().initialized());
+        assert!(apu.borrow().initialized());
+        assert!(cartridge.borrow().initialized());
+
         //let bus = Bus::initialize(Bus::empty(), rom);
 
-        let mut bus = Bus::new(cartridge);
-        bus.initialize();
+        /* let mut bus = Bus::new(cartridge);
+        bus.initialize(); */
 
         //let cpu = bus.cpu.borrow();
 
         // If we execute an instruction and it takes more cycles than we have available,
         // then we store the amount here (as a negative number) that we need to take off.
         let mut cpu_cycle_debt: i64 = 0;
+
+        // A wrapping machine cycle counter that allows us to tell when we need to clock the PPU;
+        let mut current_machine_cycles = 0;
 
         while let Ok(frame_finished_signal) = rx.recv() {
             // Do cycles for (FRAME_INTERVAL_SECS + delay_debt_s) * CPU_HZ
@@ -102,12 +111,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Each time we do a cpu instruction, find out how many clock cycles it
             // took, multiply by 12, and then run that many master clock cycles on the bus.
             loop {
-                let cpu_cycles_taken = bus.borrow().clock_cpu();
+                let cpu_cycles_taken = cpu.borrow_mut().cycle();
 
                 available_cpu_cycles -= cpu_cycles_taken as i64;
 
                 let machine_cycles_taken = cpu_cycles_taken * CLOCK_DIVISOR as u8;
-                bus.borrow_mut().clock_bus(machine_cycles_taken);
+                //bus.borrow_mut().clock_bus(machine_cycles_taken);
+
+                for _ in 0..machine_cycles_taken {
+                    // clock ppu every 4 cycles
+                    if current_machine_cycles % PPU_CLOCK_DIVISOR == 0 {
+                        ppu.borrow_mut().clock();
+                    }
+
+                    // clock cartridge every tick
+                    cartridge.borrow_mut().clock();
+
+                    current_machine_cycles = current_machine_cycles.wrapping_add(1);
+                }
 
                 // If we're out of cpu cycles, record how much we went over and then
                 // stop running cycles until the next request

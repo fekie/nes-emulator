@@ -1,6 +1,6 @@
 use crate::apu::Apu;
 use crate::cartridge::{self, Cartridge};
-use crate::cpu::CpuMemoryMapper;
+//use crate::cpu::{CpuMemoryMapper, InterruptsContainer};
 use crate::ines::Ines;
 use crate::ppu::Ppu;
 use nes6502::Cpu;
@@ -10,13 +10,13 @@ use std::rc::Rc;
 
 const PPU_CLOCK_DIVISOR: u8 = 4;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+/* #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Request {
     Active,
     Inactive,
-}
+} */
 
-/// The wrapper over a component attached to the bus.
+/* /// The wrapper over a component attached to the bus.
 ///
 /// This allows us to create a Bus statically with no components,
 /// and then populating the Bus with components so that the components can
@@ -37,9 +37,9 @@ impl<T> Component<T> {
     pub fn populate(&mut self, attachment: T) {
         self.0 = Some(Rc::new(RefCell::new(attachment)))
     }
-}
+} */
 
-/// Wraps over internally mutatable interrupt states.
+/* /// Wraps over internally mutatable interrupt states.
 #[derive(Debug)]
 pub struct Interrupts {
     pub interrupt: Request,
@@ -83,19 +83,18 @@ impl Interrupts {
     pub fn set_non_maskable_interrupt_state(&mut self, new_state: Request) {
         self.non_maskable_interrupt = new_state;
     }
-}
+} */
 
-pub type BusPointer = Rc<RefCell<Bus>>;
+/* pub type BusPointer = Rc<RefCell<Bus>>;
 
 pub struct Bus {
-    pub cpu: Component<Cpu<CpuMemoryMapper>>,
-    pub ppu: Component<Ppu>,
-    pub apu: Component<Apu>,
+    pub cpu: Option<RefCell<Cpu<CpuMemoryMapper, InterruptsContainer>>>,
+    pub ppu: Option<RefCell<Ppu>>,
+    pub apu: Option<RefCell<Apu>>,
     // todo: add APU later
     // Cartridge can sometimes interact with the cpu and apu
     // and it needs to be clocked just like
-    pub cartridge: Component<Cartridge>,
-    pub interrupts: Component<Interrupts>,
+    pub cartridge: Option<RefCell<Cartridge>>,
     /// A counter for our current cycles that wraps around. We mostly need it
     /// to be able to keep the PPU in sync as it needs to tick on every
     /// 4th machine cycle.
@@ -107,18 +106,31 @@ impl Bus {
     /// Creates an empty bus with no components.
     pub fn empty() -> Self {
         Self {
-            cpu: Component::empty(),
-            ppu: Component::empty(),
-            apu: Component::empty(),
-            cartridge: Component::empty(),
-            interrupts: Component::empty(),
+            cpu: None,
+            ppu: None,
+            apu: None,
+            cartridge: None,
             current_machine_cycles: 0,
             initialized: false,
         }
     }
 
-    pub fn initialize(&mut self, rom: Ines) -> Rc<RefCell<Self>> {
-        let cpu = Cpu::new(CpuMemoryMapper::new(Rc::clone(&bus)));
+    /// Initialize bus with components, and then attach a reference to the bus in each component.
+    pub fn initialize(
+        &mut self,
+        cpu: RefCell<Cpu<CpuMemoryMapper, InterruptsContainer>>,
+        ppu: RefCell<Ppu>,
+        apu: RefCell<Apu>,
+        cartridge: RefCell<Cartridge>,
+    ) {
+        self.cpu = Some(cpu);
+        self.ppu = Some(ppu);
+        self.apu = Some(apu);
+        self.cartridge = Some(cartridge);
+
+        self.initialized = true;
+
+        /* let cpu = Cpu::new(CpuMemoryMapper::new(Rc::clone(&bus)));
         let ppu = Ppu::new(Rc::clone(&bus));
         let apu = Apu::new(Rc::clone(&bus));
         let cartridge = Cartridge::new(rom, Rc::clone(&bus));
@@ -128,14 +140,14 @@ impl Bus {
         bus.borrow_mut().ppu.populate(ppu);
         bus.borrow_mut().apu.populate(apu);
         bus.borrow_mut().cartridge.populate(cartridge);
-        bus.borrow_mut().interrupts.populate(interrupts);
+        bus.borrow_mut().interrupts.populate(interrupts); */
 
         // We go ahead and explicitly initialize everything,
         // even if under the hood it doesn't change any values.
         // This allows us to be sure that we're initializing anything,
         // and allows for us to be able to add initialization behavior
         // later if needed.
-        bus.borrow_mut()
+        /* bus.borrow_mut()
             .cpu
             .0
             .as_ref()
@@ -173,7 +185,7 @@ impl Bus {
             .as_ref()
             .unwrap()
             .borrow_mut()
-            .initialize();
+            .initialize(); */
 
         /* let foo = self.cpu.0.as_ref().unwrap();
         let bar = foo.borrow().initialized();
@@ -187,13 +199,13 @@ impl Bus {
         assert!(self.cartridge.borrow().initialized());
         assert!(self.interrupts.borrow().initialized()); */
 
-        bus.borrow_mut().initialized = true;
+        /* bus.borrow_mut().initialized = true;
 
-        bus
+        bus */
     }
-}
+} */
 
-impl Bus {
+/* impl Bus {
     /// Runs one cycle of the cpu and returns how many cpu cycles it took.
     /// CPU cycles can be converted to clock cycles by multiplying by 12.
     pub fn clock_cpu(&self) -> u8 {
@@ -215,3 +227,4 @@ impl Bus {
         }
     }
 }
+ */

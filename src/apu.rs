@@ -1,8 +1,5 @@
-use crate::bus::BusPointer;
-
 #[allow(clippy::upper_case_acronyms)]
 pub struct Apu {
-    bus: BusPointer,
     initialized: bool,
 }
 
@@ -10,11 +7,8 @@ impl Apu {
     /// Creates the APU but does not initialize it. Please run [`Initialize`] to
     /// initialize the APU.
     #[allow(clippy::new_without_default)]
-    pub fn new(bus: BusPointer) -> Self {
-        Self {
-            bus,
-            initialized: false,
-        }
+    pub fn new() -> Self {
+        Self { initialized: false }
     }
 
     /// Initialize the APU.
