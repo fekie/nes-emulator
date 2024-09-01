@@ -8,7 +8,7 @@ clap = { version = "4.5.4", features = ["derive"] }
 crossbeam-channel = "0.5.13"
 minifb = "0.27.0"
 serde = { version = "1.0.203", features = ["derive"] }
-nes6502 = { path = "../nes6502" }
+nes6502 = "0.1.4"
 lazy_static = "1.5.0"
 rgb = "0.8.44"
 
