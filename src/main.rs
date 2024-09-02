@@ -61,8 +61,8 @@ struct Args {
     #[arg(short, long)]
     rom: String,
     /// Prints the CHR-ROM pattern table to the terminal.
-    #[arg(short, long)]
-    pattern_table: Option<bool>,
+    #[clap(short, long, default_value = None)]
+    pattern_table: bool,
 }
 
 // Using an array instead of a vector will lead to a stackoverflow, even when Box'ing.
@@ -239,7 +239,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///
 /// Returns true if we ran any debug routine.
 fn check_and_run_debug(args: &Args, rom: &Ines) -> bool {
-    if args.pattern_table.unwrap_or_default() {
+    if args.pattern_table {
         print_pattern_table(args, rom);
         return true;
     }
@@ -247,4 +247,8 @@ fn check_and_run_debug(args: &Args, rom: &Ines) -> bool {
     false
 }
 
-fn print_pattern_table(args: &Args, rom: &Ines) {}
+fn print_pattern_table(args: &Args, rom: &Ines) {
+    let first_tile = &rom.character_rom[32..48];
+    let foo = debug::deinterlace_tile(first_tile);
+    debug::print_tile(foo);
+}
