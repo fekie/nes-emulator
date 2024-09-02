@@ -10,6 +10,7 @@ use minifb::{Key, Window, WindowOptions};
 use ppu::Ppu;
 use rgb::*;
 use std::cell::RefCell;
+use std::option;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -56,8 +57,12 @@ struct FrameFinishedSignal {
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
+    /// The path of the rom to load into the program.
     #[arg(short, long)]
     rom: String,
+    /// Prints the CHR-ROM pattern table to the terminal.
+    #[arg(short, long)]
+    pattern_table: Option<bool>,
 }
 
 // Using an array instead of a vector will lead to a stackoverflow, even when Box'ing.
@@ -92,7 +97,12 @@ impl Pixels {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    let rom = Ines::parse(&std::fs::read(args.rom)?);
+    let rom = Ines::parse(&std::fs::read(&args.rom)?);
+
+    // If we need to run debug routines, run the routine and then exit.
+    if check_and_run_debug(&args, &rom) {
+        return Ok(());
+    }
 
     let pixels = Arc::new(Pixels::new());
     let mut buffer = vec![0; WIDTH * HEIGHT];
@@ -223,3 +233,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// Checks if we need any debug routines to run, such as saving
+/// pattern table data to a .png.
+///
+/// Returns true if we ran any debug routine.
+fn check_and_run_debug(args: &Args, rom: &Ines) -> bool {
+    if args.pattern_table.unwrap_or_default() {
+        print_pattern_table(args, rom);
+        return true;
+    }
+
+    false
+}
+
+fn print_pattern_table(args: &Args, rom: &Ines) {}
