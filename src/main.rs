@@ -3,6 +3,8 @@ use apu::Apu;
 use cartridge::Cartridge;
 use clap::Parser;
 use cpu::CpuContainer;
+use debug::Tile;
+use image::{DynamicImage, GrayImage, RgbImage};
 use ines::Ines;
 use lazy_static::lazy_static;
 /// - System Type: NTSC
@@ -240,15 +242,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Returns true if we ran any debug routine.
 fn check_and_run_debug(args: &Args, rom: &Ines) -> bool {
     if args.pattern_table {
-        print_pattern_table(args, rom);
+        print_pattern_tables(args, rom);
         return true;
     }
 
     false
 }
 
-fn print_pattern_table(args: &Args, rom: &Ines) {
-    let first_tile = &rom.character_rom[32..48];
-    let foo = debug::deinterlace_tile(first_tile);
-    debug::print_tile(foo);
+fn print_pattern_tables(args: &Args, rom: &Ines) {
+    let pattern_bytes = &rom.character_rom[0..=0x1FFF];
+    let tiles = pattern_bytes
+        .chunks(16)
+        .map(debug::deinterlace_tile_bytes)
+        .collect::<Vec<Tile>>();
+
+    let img = debug::stitch_tiles(&tiles);
+    img.save("pattern_table.png").unwrap();
+    println!("Saved pattern table to pattern_table.png");
 }
