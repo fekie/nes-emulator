@@ -18,3 +18,4 @@ Cargo.lock
 
 /target
 test_files
+pattern_table.png
