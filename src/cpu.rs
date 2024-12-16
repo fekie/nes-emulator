@@ -2,6 +2,16 @@ use crate::{apu::Apu, cartridge::Cartridge, ppu::Ppu};
 use nes6502::{Cpu, Interrupts, Mapper};
 use std::{cell::RefCell, rc::Rc};
 
+const PPUCTRL: u16 = 0x2000;
+const PPUMASK: u16 = 0x2001;
+const PPUSTATUS: u16 = 0x2002;
+const OAMADDR: u16 = 0x2003;
+const OAMDATA: u16 = 0x2004;
+const PPUSCROLL: u16 = 0x2005;
+const PPUADDR: u16 = 0x2006;
+const PPUDATA: u16 = 0x2007;
+const OAMDMA: u16 = 0x4014;
+
 /// We use a container that holds both interrupt states. Each interrupt state is stored in an
 /// `Rc<Refcell<bool>>` internally so that we can use [`InterruptsContainer::share()`] to create a new
 /// container with the same references so that other components can modify the interrupt states.
@@ -116,7 +126,17 @@ impl Mapper for CpuMemoryMapper {
             0x0000..=0x1FFF => self.ram[address as usize % 0x0800],
             // Handle PPU registers and the mirrors.
             0x2000..=0x3FFF => {
-                self.ppu.as_ref().unwrap().borrow().registers[((address - 0x2000) % 8) as usize]
+                let adjusted_address = 0x2000 + ((address - 0x2000) % 8);
+
+                match adjusted_address {
+                    PPUSTATUS => {
+                        unimplemented!()
+                    }
+                    OAMDATA => {
+                        unimplemented!()
+                    }
+                    _ => panic!("Illegal PPU Operation"),
+                }
             }
             // Saved for APU
             0x4000..=0x4017 => unimplemented!(),
@@ -133,13 +153,28 @@ impl Mapper for CpuMemoryMapper {
             0x0000..=0x1FFF => self.ram[address as usize % 0x0800] = byte,
             // Handle PPU registers and the mirrors.
             0x2000..=0x3FFF => {
-                self.ppu.as_ref().unwrap().borrow_mut().registers
-                    [((address - 0x2000) % 8) as usize] = byte
+                let adjusted_address = 0x2000 + ((address - 0x2000) % 8);
+
+                match adjusted_address {
+                    PPUCTRL => unimplemented!(),
+                    PPUMASK => unimplemented!(),
+                    OAMADDR => unimplemented!(),
+                    OAMDATA => unimplemented!(),
+                    PPUSCROLL => unimplemented!(),
+                    PPUADDR => unimplemented!(),
+                    PPUDATA => unimplemented!(),
+                    _ => panic!("Illegal PPU Operation"),
+                }
             }
             // Saved for APU
-            0x4000..=0x4017 => {
-                // do nothing for now
-            }
+            0x4000..=0x4017 => match address {
+                OAMDMA => {
+                    unimplemented!()
+                }
+                _ => {
+                    // do nothing for now
+                }
+            },
             // Disabled
             0x4018..=0x401F => unimplemented!(),
             // Route to cartridge mapper
