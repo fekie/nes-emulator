@@ -57,7 +57,7 @@ impl Cartridge {
 
 struct Nrom {
     program_rom: [u8; KB * 32],
-    character_rom: [u8; KB * 8],
+    character_rom: [u8; KB * 32], // Can store up to 32kb of character rom, but we can use less as well
     cpu: Option<Rc<RefCell<CpuContainer>>>,
     ppu: Option<Rc<RefCell<Ppu>>>,
     initialized: bool,
@@ -66,8 +66,13 @@ struct Nrom {
 impl Nrom {
     pub fn new(mut ines: Ines) -> Self {
         let mut program_rom = [0; KB * 32];
-        let mut character_rom = [0; KB * 8];
-        character_rom.copy_from_slice(&ines.character_rom);
+        let mut character_rom = [0; KB * 32];
+
+        //character_rom.copy_from_slice(&ines.character_rom);
+        for (dest, src) in character_rom.iter_mut().zip(&ines.character_rom) {
+            *dest = *src;
+        }
+
         let is_mirrored = program_rom.len() != ines.program_rom.len();
 
         Self {
