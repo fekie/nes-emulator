@@ -129,12 +129,8 @@ impl Mapper for CpuMemoryMapper {
                 let adjusted_address = 0x2000 + ((address - 0x2000) % 8);
 
                 match adjusted_address {
-                    PPUSTATUS => {
-                        unimplemented!()
-                    }
-                    OAMDATA => {
-                        unimplemented!()
-                    }
+                    PPUSTATUS => self.ppu.as_ref().unwrap().borrow().read_ppu_status(),
+                    OAMDATA => self.ppu.as_ref().unwrap().borrow().read_oam_data(),
                     _ => panic!("Illegal PPU Operation"),
                 }
             }
@@ -156,13 +152,13 @@ impl Mapper for CpuMemoryMapper {
                 let adjusted_address = 0x2000 + ((address - 0x2000) % 8);
 
                 match adjusted_address {
-                    PPUCTRL => unimplemented!(),
-                    PPUMASK => unimplemented!(),
-                    OAMADDR => unimplemented!(),
-                    OAMDATA => unimplemented!(),
-                    PPUSCROLL => unimplemented!(),
-                    PPUADDR => unimplemented!(),
-                    PPUDATA => unimplemented!(),
+                    PPUCTRL => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_ctrl(),
+                    PPUMASK => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_mask(),
+                    OAMADDR => self.ppu.as_ref().unwrap().borrow_mut().write_oam_addr(),
+                    OAMDATA => self.ppu.as_ref().unwrap().borrow_mut().write_oam_data(),
+                    PPUSCROLL => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_scroll(),
+                    PPUADDR => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_addr(),
+                    PPUDATA => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_data(),
                     _ => panic!("Illegal PPU Operation"),
                 }
             }
