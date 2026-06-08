@@ -3,7 +3,7 @@ use apu::Apu;
 use cartridge::Cartridge;
 use clap::Parser;
 use cpu::{CpuContainer, CpuDebugSnapshot};
-use debug::Tile;
+use debug::{StartupInstructionTrace, Tile};
 use ines::Ines;
 /// - System Type: NTSC
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
@@ -175,8 +175,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // A wrapping machine cycle counter that allows us to tell when we need to clock the PPU;
         let mut current_machine_cycles = 0;
         let mut debug_snapshot = CpuDebugSnapshot::default();
+        let mut startup_instruction_trace =
+            StartupInstructionTrace::new("startup_instruction_trace.txt");
 
         while let Ok(frame_finished_signal) = rx.recv() {
+            if let Err(err) = startup_instruction_trace.save_if_complete() {
+                eprintln!(
+                    "Failed to save startup instruction trace to {}: {err}",
+                    startup_instruction_trace.path().display()
+                );
+            }
+
             match frame_finished_signal.current_keycode {
                 Keycode::Placeholder => {}
                 Keycode::ToggleOrange | Keycode::ToggleIndigo => {}
@@ -196,6 +205,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if cpu_cycles_taken == 0 {
                     *thread_1_cpu_debug.lock().unwrap() = debug_snapshot.clone();
                     break;
+                }
+
+                if let Err(err) = startup_instruction_trace.record(&debug_snapshot) {
+                    eprintln!(
+                        "Failed to save startup instruction trace to {}: {err}",
+                        startup_instruction_trace.path().display()
+                    );
                 }
 
                 available_cpu_cycles -= cpu_cycles_taken as i64;

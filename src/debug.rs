@@ -1,7 +1,96 @@
-use image::{DynamicImage, GrayImage, Rgb, RgbImage, RgbaImage};
-use std::fmt::Write;
+use crate::cpu::CpuDebugSnapshot;
+use image::{Rgb, RgbImage};
+use std::fs::File;
+use std::io::{self, BufWriter, Write};
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 pub struct Tile(pub [[Rgb<u8>; 8]; 8]);
+
+const STARTUP_INSTRUCTION_LIMIT: usize = 1000;
+const STARTUP_TRACE_WINDOW: Duration = Duration::from_secs(3);
+
+pub struct StartupInstructionTrace {
+    started_at: Instant,
+    path: PathBuf,
+    entries: Vec<String>,
+    saved: bool,
+}
+
+impl StartupInstructionTrace {
+    pub fn new(path: impl Into<PathBuf>) -> Self {
+        Self {
+            started_at: Instant::now(),
+            path: path.into(),
+            entries: Vec::with_capacity(STARTUP_INSTRUCTION_LIMIT),
+            saved: false,
+        }
+    }
+
+    pub fn record(&mut self, snapshot: &CpuDebugSnapshot) -> io::Result<()> {
+        if self.saved {
+            return Ok(());
+        }
+
+        if self.entries.len() < STARTUP_INSTRUCTION_LIMIT
+            && self.started_at.elapsed() <= STARTUP_TRACE_WINDOW
+        {
+            self.entries.push(format_trace_entry(snapshot));
+        }
+
+        self.save_if_complete()
+    }
+
+    pub fn save_if_complete(&mut self) -> io::Result<()> {
+        if !self.saved
+            && (self.entries.len() >= STARTUP_INSTRUCTION_LIMIT
+                || self.started_at.elapsed() >= STARTUP_TRACE_WINDOW)
+        {
+            self.save()?;
+            self.saved = true;
+        }
+
+        Ok(())
+    }
+
+    fn save(&self) -> io::Result<()> {
+        let file = File::create(&self.path)?;
+        let mut writer = BufWriter::new(file);
+
+        writeln!(
+            writer,
+            "Startup instruction trace: {} instructions captured in {:.3}s",
+            self.entries.len(),
+            self.started_at.elapsed().as_secs_f64()
+        )?;
+
+        for entry in &self.entries {
+            writeln!(writer, "{entry}")?;
+        }
+
+        Ok(())
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+fn format_trace_entry(snapshot: &CpuDebugSnapshot) -> String {
+    format!(
+        "#{:04} PC=${:04X} A=${:02X} X=${:02X} Y=${:02X} SP=${:02X} P=${:02X} CYC={} OK={} {}",
+        snapshot.instruction_count,
+        snapshot.program_counter,
+        snapshot.accumulator,
+        snapshot.x,
+        snapshot.y,
+        snapshot.stack_pointer,
+        snapshot.processor_status,
+        snapshot.total_cpu_cycles,
+        snapshot.last_instruction_success,
+        snapshot.current_instruction
+    )
+}
 
 #[allow(dead_code)]
 pub fn hex_print_word(word: u16) {
