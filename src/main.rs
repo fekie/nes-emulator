@@ -6,7 +6,7 @@ use cpu::{CpuContainer, CpuDebugSnapshot};
 use debug::Tile;
 use ines::Ines;
 /// - System Type: NTSC
-use minifb::{Key, Window, WindowOptions};
+use minifb::{Key, KeyRepeat, Window, WindowOptions};
 use ppu::Ppu;
 use rgb::*;
 use std::cell::RefCell;
@@ -42,10 +42,45 @@ mod ppu;
 
 pub struct MapperType {}
 
+#[derive(Clone, Copy, Debug, Default)]
+struct ColorToggles {
+    orange: bool,
+    indigo: bool,
+}
+
+impl ColorToggles {
+    fn frame_color(self) -> Rgb<u8> {
+        match (self.orange, self.indigo) {
+            (false, false) => Rgb {
+                r: 255,
+                g: 255,
+                b: 0,
+            },
+            (true, false) => Rgb {
+                r: 255,
+                g: 108,
+                b: 0,
+            },
+            (false, true) => Rgb {
+                r: 70,
+                g: 120,
+                b: 255,
+            },
+            (true, true) => Rgb {
+                r: 220,
+                g: 70,
+                b: 255,
+            },
+        }
+    }
+}
+
 #[derive(Default, Debug)]
 enum Keycode {
     #[default]
     Placeholder,
+    ToggleOrange,
+    ToggleIndigo,
 }
 
 #[derive(Debug)]
@@ -142,6 +177,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut debug_snapshot = CpuDebugSnapshot::default();
 
         while let Ok(frame_finished_signal) = rx.recv() {
+            match frame_finished_signal.current_keycode {
+                Keycode::Placeholder => {}
+                Keycode::ToggleOrange | Keycode::ToggleIndigo => {}
+            }
+
             // Do cycles for (FRAME_INTERVAL_SECS + delay_debt_s) * CPU_HZ
             let mut available_cpu_cycles =
                 ((FRAME_INTERVAL_SECS + frame_finished_signal.delay_debt_s) * CPU_HZ as f64) as i64
@@ -201,6 +241,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     window.set_target_fps(60);
 
     let mut previous_frame_stamp = Instant::now();
+    let mut color_toggles = ColorToggles::default();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         /* for i in buffer.iter_mut() {
@@ -209,21 +250,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             v += v.ilog(4);
         } */
 
+        let mut current_keycode = Keycode::Placeholder;
+        if window.is_key_pressed(Key::O, KeyRepeat::No) {
+            color_toggles.orange = !color_toggles.orange;
+            current_keycode = Keycode::ToggleOrange;
+        }
+        if window.is_key_pressed(Key::I, KeyRepeat::No) {
+            color_toggles.indigo = !color_toggles.indigo;
+            current_keycode = Keycode::ToggleIndigo;
+        }
+
+        let frame_color = color_toggles.frame_color();
         for i in 0..WIDTH * HEIGHT {
             let y = i / WIDTH;
             let x = i % WIDTH;
-            pixels.write(
-                x,
-                y,
-                Rgb {
-                    r: 255,
-                    g: 255,
-                    b: 0,
-                },
-            );
+            pixels.write(x, y, frame_color);
         }
 
-        draw_app_frame(&mut buffer, &pixels, &cpu_debug.lock().unwrap());
+        draw_app_frame(
+            &mut buffer,
+            &pixels,
+            &cpu_debug.lock().unwrap(),
+            color_toggles,
+        );
         window
             .update_with_buffer(&buffer, APP_WIDTH, HEIGHT)
             .unwrap();
@@ -231,7 +280,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let delay_debt_s = previous_frame_stamp.elapsed().as_secs_f64() - FRAME_INTERVAL_SECS;
 
         tx.send(FrameFinishedSignal {
-            current_keycode: Keycode::Placeholder,
+            current_keycode,
             delay_debt_s,
         })
         .unwrap();
@@ -245,7 +294,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn draw_app_frame(buffer: &mut [u32], pixels: &Pixels, cpu_debug: &CpuDebugSnapshot) {
+fn draw_app_frame(
+    buffer: &mut [u32],
+    pixels: &Pixels,
+    cpu_debug: &CpuDebugSnapshot,
+    color_toggles: ColorToggles,
+) {
     buffer.fill(0x111318);
 
     let pixels = pixels.0.lock().unwrap();
@@ -256,10 +310,10 @@ fn draw_app_frame(buffer: &mut [u32], pixels: &Pixels, cpu_debug: &CpuDebugSnaps
             .copy_from_slice(&pixels[source_row..source_row + WIDTH]);
     }
 
-    draw_debug_panel(buffer, cpu_debug);
+    draw_debug_panel(buffer, cpu_debug, color_toggles);
 }
 
-fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot) {
+fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot, color_toggles: ColorToggles) {
     let left = WIDTH;
 
     for y in 0..HEIGHT {
@@ -323,14 +377,33 @@ fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot) {
             0xF2CC60
         },
     );
+    draw_text(
+        buffer,
+        left + 10,
+        112,
+        &format!(
+            "O {} I {}",
+            toggle_label(color_toggles.orange),
+            toggle_label(color_toggles.indigo)
+        ),
+        0xFFA657,
+    );
 
-    draw_text(buffer, left + 10, 124, "CURRENT", 0xE6EDF3);
+    draw_text(buffer, left + 10, 132, "CURRENT", 0xE6EDF3);
     for (index, line) in wrap_debug_text(&cpu_debug.current_instruction, 21)
         .iter()
         .take(8)
         .enumerate()
     {
-        draw_text(buffer, left + 10, 138 + (index * 12), line, 0xC9D1D9);
+        draw_text(buffer, left + 10, 146 + (index * 12), line, 0xC9D1D9);
+    }
+}
+
+fn toggle_label(enabled: bool) -> &'static str {
+    if enabled {
+        "ON"
+    } else {
+        "OFF"
     }
 }
 
@@ -482,7 +555,7 @@ mod tests {
         };
 
         let mut buffer = vec![0; APP_WIDTH * HEIGHT];
-        draw_app_frame(&mut buffer, &pixels, &snapshot);
+        draw_app_frame(&mut buffer, &pixels, &snapshot, ColorToggles::default());
 
         assert_eq!(APP_WIDTH, WIDTH + DEBUG_PANEL_WIDTH);
         assert_eq!(buffer[0], 0xAA5511);
@@ -492,6 +565,54 @@ mod tests {
             buffer[text_row_start + WIDTH + 10..text_row_start + APP_WIDTH]
                 .iter()
                 .any(|pixel| *pixel != 0x111318)
+        );
+    }
+
+    #[test]
+    fn color_toggles_change_frame_color() {
+        assert_eq!(
+            ColorToggles::default().frame_color(),
+            Rgb {
+                r: 255,
+                g: 255,
+                b: 0
+            }
+        );
+        assert_eq!(
+            ColorToggles {
+                orange: true,
+                indigo: false
+            }
+            .frame_color(),
+            Rgb {
+                r: 255,
+                g: 108,
+                b: 0
+            }
+        );
+        assert_eq!(
+            ColorToggles {
+                orange: false,
+                indigo: true
+            }
+            .frame_color(),
+            Rgb {
+                r: 70,
+                g: 120,
+                b: 255
+            }
+        );
+        assert_eq!(
+            ColorToggles {
+                orange: true,
+                indigo: true
+            }
+            .frame_color(),
+            Rgb {
+                r: 220,
+                g: 70,
+                b: 255
+            }
         );
     }
 }
