@@ -52,6 +52,37 @@ impl Interrupts for InterruptsContainer {
 /// A container that holds the CPU + Interrupts. Interrupts can be accessed by using `Cpu.interrupts`.
 pub struct CpuContainer(pub Cpu<CpuMemoryMapper, InterruptsContainer>);
 
+#[derive(Clone, Debug)]
+pub struct CpuDebugSnapshot {
+    pub program_counter: u16,
+    pub accumulator: u8,
+    pub x: u8,
+    pub y: u8,
+    pub stack_pointer: u8,
+    pub processor_status: u8,
+    pub current_instruction: String,
+    pub last_instruction_success: bool,
+    pub total_cpu_cycles: u64,
+    pub instruction_count: u64,
+}
+
+impl Default for CpuDebugSnapshot {
+    fn default() -> Self {
+        Self {
+            program_counter: 0,
+            accumulator: 0,
+            x: 0,
+            y: 0,
+            stack_pointer: 0,
+            processor_status: 0,
+            current_instruction: "Not started".to_string(),
+            last_instruction_success: false,
+            total_cpu_cycles: 0,
+            instruction_count: 0,
+        }
+    }
+}
+
 impl CpuContainer {
     pub fn new() -> Self {
         let memory_mapper = CpuMemoryMapper::new();
@@ -79,6 +110,26 @@ impl CpuContainer {
     /// cpu cycles taken.
     pub fn cycle(&mut self) -> u8 {
         self.0.cycle()
+    }
+
+    pub fn cycle_debug(&mut self, debug_snapshot: &mut CpuDebugSnapshot) -> u8 {
+        let (cycles, success, instruction) = self.0.cycle_debug();
+
+        debug_snapshot.program_counter = self.0.program_counter;
+        debug_snapshot.accumulator = self.0.accumulator;
+        debug_snapshot.x = self.0.x;
+        debug_snapshot.y = self.0.y;
+        debug_snapshot.stack_pointer = self.0.stack_pointer;
+        debug_snapshot.processor_status = self.0.processor_status.0;
+        debug_snapshot.current_instruction = match instruction {
+            Some(instruction) => format!("{instruction:?}"),
+            None => "Invalid opcode".to_string(),
+        };
+        debug_snapshot.last_instruction_success = success;
+        debug_snapshot.total_cpu_cycles += cycles as u64;
+        debug_snapshot.instruction_count += 1;
+
+        cycles
     }
 }
 

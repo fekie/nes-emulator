@@ -2,17 +2,14 @@
 use apu::Apu;
 use cartridge::Cartridge;
 use clap::Parser;
-use cpu::CpuContainer;
+use cpu::{CpuContainer, CpuDebugSnapshot};
 use debug::Tile;
-use image::{DynamicImage, GrayImage, RgbImage};
 use ines::Ines;
-use lazy_static::lazy_static;
 /// - System Type: NTSC
 use minifb::{Key, Window, WindowOptions};
 use ppu::Ppu;
 use rgb::*;
 use std::cell::RefCell;
-use std::option;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -21,8 +18,11 @@ use std::time::Instant;
 
 const WIDTH: usize = 256;
 const HEIGHT: usize = 240;
-const SCREEN_WIDTH: usize = WIDTH * 4;
-const SCREEN_HEIGHT: usize = HEIGHT * 4;
+const DEBUG_PANEL_WIDTH: usize = 152;
+const APP_WIDTH: usize = WIDTH + DEBUG_PANEL_WIDTH;
+const SCALE: usize = 4;
+const SCREEN_WIDTH: usize = APP_WIDTH * SCALE;
+const SCREEN_HEIGHT: usize = HEIGHT * SCALE;
 
 // Speeds taken from https://www.nesdev.org/wiki/CPU
 const CORE_CLOCK_HZ: u64 = 21_441_960;
@@ -107,9 +107,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let pixels = Arc::new(Pixels::new());
-    let mut buffer = vec![0; WIDTH * HEIGHT];
+    let cpu_debug = Arc::new(Mutex::new(CpuDebugSnapshot::default()));
+    let mut buffer = vec![0; APP_WIDTH * HEIGHT];
 
     let thread_1_pixels = pixels.clone();
+    let thread_1_cpu_debug = cpu_debug.clone();
 
     let (tx, rx) = crossbeam_channel::unbounded::<FrameFinishedSignal>();
 
@@ -137,6 +139,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // A wrapping machine cycle counter that allows us to tell when we need to clock the PPU;
         let mut current_machine_cycles = 0;
+        let mut debug_snapshot = CpuDebugSnapshot::default();
 
         while let Ok(frame_finished_signal) = rx.recv() {
             // Do cycles for (FRAME_INTERVAL_SECS + delay_debt_s) * CPU_HZ
@@ -148,7 +151,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // took, multiply by 12, and then run that many master clock cycles on the bus.
             loop {
                 // run a cpu full instruction cycle and see how many cpu cycles were taken
-                let cpu_cycles_taken = cpu.borrow_mut().cycle();
+                let cpu_cycles_taken = cpu.borrow_mut().cycle_debug(&mut debug_snapshot);
+
+                if cpu_cycles_taken == 0 {
+                    *thread_1_cpu_debug.lock().unwrap() = debug_snapshot.clone();
+                    break;
+                }
 
                 available_cpu_cycles -= cpu_cycles_taken as i64;
 
@@ -170,6 +178,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // stop running cycles until the next request
                 if available_cpu_cycles <= 0 {
                     cpu_cycle_debt = available_cpu_cycles;
+                    *thread_1_cpu_debug.lock().unwrap() = debug_snapshot.clone();
                     break;
                 }
             }
@@ -190,8 +199,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Limit to max ~60 fps update rate
     window.set_target_fps(60);
-
-    let mut v = 0;
 
     let mut previous_frame_stamp = Instant::now();
 
@@ -216,8 +223,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
 
-        pixels.copy_to_buffer(&mut buffer);
-        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+        draw_app_frame(&mut buffer, &pixels, &cpu_debug.lock().unwrap());
+        window
+            .update_with_buffer(&buffer, APP_WIDTH, HEIGHT)
+            .unwrap();
 
         let delay_debt_s = previous_frame_stamp.elapsed().as_secs_f64() - FRAME_INTERVAL_SECS;
 
@@ -234,6 +243,187 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+fn draw_app_frame(buffer: &mut [u32], pixels: &Pixels, cpu_debug: &CpuDebugSnapshot) {
+    buffer.fill(0x111318);
+
+    let pixels = pixels.0.lock().unwrap();
+    for y in 0..HEIGHT {
+        let source_row = y * WIDTH;
+        let target_row = y * APP_WIDTH;
+        buffer[target_row..target_row + WIDTH]
+            .copy_from_slice(&pixels[source_row..source_row + WIDTH]);
+    }
+
+    draw_debug_panel(buffer, cpu_debug);
+}
+
+fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot) {
+    let left = WIDTH;
+
+    for y in 0..HEIGHT {
+        buffer[y * APP_WIDTH + left] = 0x2A2F3A;
+    }
+
+    draw_text(buffer, left + 10, 10, "CPU DEBUG", 0xE6EDF3);
+    draw_text(
+        buffer,
+        left + 10,
+        28,
+        &format!("PC  ${:04X}", cpu_debug.program_counter),
+        0xC9D1D9,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        40,
+        &format!(
+            "A {:02X} X {:02X} Y {:02X}",
+            cpu_debug.accumulator, cpu_debug.x, cpu_debug.y
+        ),
+        0xC9D1D9,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        52,
+        &format!(
+            "SP {:02X} P {:02X}",
+            cpu_debug.stack_pointer, cpu_debug.processor_status
+        ),
+        0xC9D1D9,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        70,
+        &format!("CYC {}", cpu_debug.total_cpu_cycles),
+        0xA5D6FF,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        82,
+        &format!("INS {}", cpu_debug.instruction_count),
+        0xA5D6FF,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        100,
+        if cpu_debug.last_instruction_success {
+            "STATUS OK"
+        } else {
+            "STATUS WAIT"
+        },
+        if cpu_debug.last_instruction_success {
+            0x7EE787
+        } else {
+            0xF2CC60
+        },
+    );
+
+    draw_text(buffer, left + 10, 124, "CURRENT", 0xE6EDF3);
+    for (index, line) in wrap_debug_text(&cpu_debug.current_instruction, 21)
+        .iter()
+        .take(8)
+        .enumerate()
+    {
+        draw_text(buffer, left + 10, 138 + (index * 12), line, 0xC9D1D9);
+    }
+}
+
+fn wrap_debug_text(text: &str, width: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+
+    for word in text.split_whitespace() {
+        if !current.is_empty() && current.len() + word.len() + 1 > width {
+            lines.push(current);
+            current = String::new();
+        }
+
+        if !current.is_empty() {
+            current.push(' ');
+        }
+        current.push_str(word);
+    }
+
+    if !current.is_empty() {
+        lines.push(current);
+    }
+
+    lines
+}
+
+fn draw_text(buffer: &mut [u32], x: usize, y: usize, text: &str, color: u32) {
+    for (index, character) in text.chars().enumerate() {
+        draw_character(buffer, x + index * 6, y, character, color);
+    }
+}
+
+fn draw_character(buffer: &mut [u32], x: usize, y: usize, character: char, color: u32) {
+    for (row, bits) in glyph(character).iter().enumerate() {
+        for col in 0..5 {
+            if bits & (1 << (4 - col)) != 0 {
+                let target_x = x + col;
+                let target_y = y + row;
+                if target_x < APP_WIDTH && target_y < HEIGHT {
+                    buffer[target_y * APP_WIDTH + target_x] = color;
+                }
+            }
+        }
+    }
+}
+
+fn glyph(character: char) -> [u8; 7] {
+    match character.to_ascii_uppercase() {
+        'A' => [0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11],
+        'B' => [0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E],
+        'C' => [0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E],
+        'D' => [0x1E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1E],
+        'E' => [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F],
+        'F' => [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10],
+        'G' => [0x0E, 0x11, 0x10, 0x17, 0x11, 0x11, 0x0E],
+        'H' => [0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11],
+        'I' => [0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x1F],
+        'J' => [0x01, 0x01, 0x01, 0x01, 0x11, 0x11, 0x0E],
+        'K' => [0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11],
+        'L' => [0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F],
+        'M' => [0x11, 0x1B, 0x15, 0x15, 0x11, 0x11, 0x11],
+        'N' => [0x11, 0x19, 0x15, 0x13, 0x11, 0x11, 0x11],
+        'O' => [0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
+        'P' => [0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10],
+        'Q' => [0x0E, 0x11, 0x11, 0x11, 0x15, 0x12, 0x0D],
+        'R' => [0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11],
+        'S' => [0x0F, 0x10, 0x10, 0x0E, 0x01, 0x01, 0x1E],
+        'T' => [0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04],
+        'U' => [0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
+        'V' => [0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04],
+        'W' => [0x11, 0x11, 0x11, 0x15, 0x15, 0x15, 0x0A],
+        'X' => [0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11],
+        'Y' => [0x11, 0x11, 0x0A, 0x04, 0x04, 0x04, 0x04],
+        'Z' => [0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F],
+        '0' => [0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E],
+        '1' => [0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E],
+        '2' => [0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F],
+        '3' => [0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E],
+        '4' => [0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02],
+        '5' => [0x1F, 0x10, 0x10, 0x1E, 0x01, 0x01, 0x1E],
+        '6' => [0x0E, 0x10, 0x10, 0x1E, 0x11, 0x11, 0x0E],
+        '7' => [0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08],
+        '8' => [0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E],
+        '9' => [0x0E, 0x11, 0x11, 0x0F, 0x01, 0x01, 0x0E],
+        '$' => [0x04, 0x0F, 0x14, 0x0E, 0x05, 0x1E, 0x04],
+        ':' => [0x00, 0x04, 0x04, 0x00, 0x04, 0x04, 0x00],
+        ',' => [0x00, 0x00, 0x00, 0x00, 0x04, 0x04, 0x08],
+        '_' => [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F],
+        '(' => [0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02],
+        ')' => [0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08],
+        ' ' => [0x00; 7],
+        _ => [0x1F, 0x01, 0x02, 0x04, 0x04, 0x00, 0x04],
+    }
 }
 
 /// Checks if we need any debug routines to run, such as saving
@@ -259,4 +449,49 @@ fn print_pattern_tables(args: &Args, rom: &Ines) {
     let img = debug::stitch_tiles(&tiles);
     img.save("pattern_table.png").unwrap();
     println!("Saved pattern table to pattern_table.png");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn debug_panel_expands_frame_and_draws_snapshot() {
+        let pixels = Pixels::new();
+        pixels.write(
+            0,
+            0,
+            Rgb {
+                r: 0xAA,
+                g: 0x55,
+                b: 0x11,
+            },
+        );
+
+        let snapshot = CpuDebugSnapshot {
+            program_counter: 0xC000,
+            accumulator: 0x01,
+            x: 0x02,
+            y: 0x03,
+            stack_pointer: 0xFD,
+            processor_status: 0x24,
+            current_instruction: "Instruction { opcode: LDA }".to_string(),
+            last_instruction_success: true,
+            total_cpu_cycles: 123,
+            instruction_count: 45,
+        };
+
+        let mut buffer = vec![0; APP_WIDTH * HEIGHT];
+        draw_app_frame(&mut buffer, &pixels, &snapshot);
+
+        assert_eq!(APP_WIDTH, WIDTH + DEBUG_PANEL_WIDTH);
+        assert_eq!(buffer[0], 0xAA5511);
+        assert_eq!(buffer[WIDTH], 0x2A2F3A);
+        let text_row_start = 10 * APP_WIDTH;
+        assert!(
+            buffer[text_row_start + WIDTH + 10..text_row_start + APP_WIDTH]
+                .iter()
+                .any(|pixel| *pixel != 0x111318)
+        );
+    }
 }
