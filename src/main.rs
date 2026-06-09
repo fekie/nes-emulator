@@ -6,8 +6,8 @@ use cpu::{CpuContainer, CpuDebugSnapshot};
 use debug::{StartupInstructionTrace, Tile};
 use ines::Ines;
 /// - System Type: NTSC
-use minifb::{Key, KeyRepeat, Window, WindowOptions};
-use ppu::Ppu;
+use minifb::{Key, KeyRepeat, Scale, Window, WindowOptions};
+use ppu::{Ppu, PpuDebugSnapshot};
 use rgb::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -16,22 +16,17 @@ use std::sync::Mutex;
 use std::thread::spawn;
 use std::time::Instant;
 
-const WIDTH: usize = 256;
-const HEIGHT: usize = 240;
-const DEBUG_PANEL_WIDTH: usize = 152;
+const WIDTH: usize = ppu::VISIBLE_DOTS;
+const HEIGHT: usize = ppu::VISIBLE_SCANLINES;
+const DEBUG_PANEL_WIDTH: usize = 168;
 const APP_WIDTH: usize = WIDTH + DEBUG_PANEL_WIDTH;
-const SCALE: usize = 4;
-const SCREEN_WIDTH: usize = APP_WIDTH * SCALE;
-const SCREEN_HEIGHT: usize = HEIGHT * SCALE;
 
-// Speeds taken from https://www.nesdev.org/wiki/CPU
-const CORE_CLOCK_HZ: u64 = 21_441_960;
+const MASTER_CLOCK_HZ: f64 = 21_477_272.0;
 const CLOCK_DIVISOR: u64 = 12;
-const CPU_HZ: u64 = CORE_CLOCK_HZ / CLOCK_DIVISOR;
-const FRAME_INTERVAL_SECS: f64 = 1.0 / TARGET_FPS as f64;
+const CPU_HZ: f64 = MASTER_CLOCK_HZ / CLOCK_DIVISOR as f64;
+const FRAME_INTERVAL_SECS: f64 = ppu::CPU_CYCLES_PER_FRAME / CPU_HZ;
 
 const PPU_CLOCK_DIVISOR: u8 = 4;
-const TARGET_FPS: usize = 60;
 
 mod apu;
 mod cartridge;
@@ -95,7 +90,7 @@ struct FrameFinishedSignal {
 #[command(version, about, long_about = None)]
 struct Args {
     /// The path of the rom to load into the program.
-    #[arg(short, long)]
+    //#[arg(short, long)]
     rom: String,
     /// Prints the CHR-ROM pattern table to the terminal.
     #[clap(short, long, default_value = None)]
@@ -143,10 +138,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let pixels = Arc::new(Pixels::new());
     let cpu_debug = Arc::new(Mutex::new(CpuDebugSnapshot::default()));
+    let ppu_debug = Arc::new(Mutex::new(PpuDebugSnapshot::default()));
     let mut buffer = vec![0; APP_WIDTH * HEIGHT];
 
     let thread_1_pixels = pixels.clone();
     let thread_1_cpu_debug = cpu_debug.clone();
+    let thread_1_ppu_debug = ppu_debug.clone();
 
     let (tx, rx) = crossbeam_channel::unbounded::<FrameFinishedSignal>();
 
@@ -193,7 +190,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Do cycles for (FRAME_INTERVAL_SECS + delay_debt_s) * CPU_HZ
             let mut available_cpu_cycles =
-                ((FRAME_INTERVAL_SECS + frame_finished_signal.delay_debt_s) * CPU_HZ as f64) as i64
+                ((FRAME_INTERVAL_SECS + frame_finished_signal.delay_debt_s) * CPU_HZ) as i64
                     + cpu_cycle_debt;
 
             // Each time we do a cpu instruction, find out how many clock cycles it
@@ -204,6 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 if cpu_cycles_taken == 0 {
                     *thread_1_cpu_debug.lock().unwrap() = debug_snapshot.clone();
+                    *thread_1_ppu_debug.lock().unwrap() = ppu.borrow().debug_snapshot();
                     break;
                 }
 
@@ -235,6 +233,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if available_cpu_cycles <= 0 {
                     cpu_cycle_debt = available_cpu_cycles;
                     *thread_1_cpu_debug.lock().unwrap() = debug_snapshot.clone();
+                    *thread_1_ppu_debug.lock().unwrap() = ppu.borrow().debug_snapshot();
                     break;
                 }
             }
@@ -245,9 +244,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut window = Window::new(
         "Test - ESC to exit",
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT,
-        WindowOptions::default(),
+        APP_WIDTH,
+        HEIGHT,
+        WindowOptions {
+            scale: Scale::X4,
+            ..WindowOptions::default()
+        },
     )
     .unwrap_or_else(|e| {
         panic!("{}", e);
@@ -276,17 +278,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             current_keycode = Keycode::ToggleIndigo;
         }
 
-        let frame_color = color_toggles.frame_color();
-        for i in 0..WIDTH * HEIGHT {
-            let y = i / WIDTH;
-            let x = i % WIDTH;
-            pixels.write(x, y, frame_color);
-        }
-
         draw_app_frame(
             &mut buffer,
             &pixels,
             &cpu_debug.lock().unwrap(),
+            &ppu_debug.lock().unwrap(),
             color_toggles,
         );
         window
@@ -314,6 +310,7 @@ fn draw_app_frame(
     buffer: &mut [u32],
     pixels: &Pixels,
     cpu_debug: &CpuDebugSnapshot,
+    ppu_debug: &PpuDebugSnapshot,
     color_toggles: ColorToggles,
 ) {
     buffer.fill(0x111318);
@@ -326,10 +323,15 @@ fn draw_app_frame(
             .copy_from_slice(&pixels[source_row..source_row + WIDTH]);
     }
 
-    draw_debug_panel(buffer, cpu_debug, color_toggles);
+    draw_debug_panel(buffer, cpu_debug, ppu_debug, color_toggles);
 }
 
-fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot, color_toggles: ColorToggles) {
+fn draw_debug_panel(
+    buffer: &mut [u32],
+    cpu_debug: &CpuDebugSnapshot,
+    ppu_debug: &PpuDebugSnapshot,
+    color_toggles: ColorToggles,
+) {
     let left = WIDTH;
 
     for y in 0..HEIGHT {
@@ -381,7 +383,36 @@ fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot, color_togg
     draw_text(
         buffer,
         left + 10,
-        100,
+        94,
+        &format!("PPU S{:03} D{:03}", ppu_debug.scanline, ppu_debug.dot),
+        0x7EE787,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        106,
+        &format!("FRM {}", ppu_debug.frame),
+        0x7EE787,
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        118,
+        if ppu_debug.in_vblank {
+            "VBLANK YES"
+        } else {
+            "VBLANK NO"
+        },
+        if ppu_debug.in_vblank {
+            0xF2CC60
+        } else {
+            0x7EE787
+        },
+    );
+    draw_text(
+        buffer,
+        left + 10,
+        136,
         if cpu_debug.last_instruction_success {
             "STATUS OK"
         } else {
@@ -396,7 +427,7 @@ fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot, color_togg
     draw_text(
         buffer,
         left + 10,
-        112,
+        148,
         &format!(
             "O {} I {}",
             toggle_label(color_toggles.orange),
@@ -405,13 +436,13 @@ fn draw_debug_panel(buffer: &mut [u32], cpu_debug: &CpuDebugSnapshot, color_togg
         0xFFA657,
     );
 
-    draw_text(buffer, left + 10, 132, "CURRENT", 0xE6EDF3);
+    draw_text(buffer, left + 10, 168, "CURRENT", 0xE6EDF3);
     for (index, line) in wrap_debug_text(&cpu_debug.current_instruction, 21)
         .iter()
-        .take(8)
+        .take(5)
         .enumerate()
     {
-        draw_text(buffer, left + 10, 146 + (index * 12), line, 0xC9D1D9);
+        draw_text(buffer, left + 10, 182 + (index * 12), line, 0xC9D1D9);
     }
 }
 
@@ -528,7 +559,7 @@ fn check_and_run_debug(args: &Args, rom: &Ines) -> bool {
     false
 }
 
-fn print_pattern_tables(args: &Args, rom: &Ines) {
+fn print_pattern_tables(_args: &Args, rom: &Ines) {
     let pattern_bytes = &rom.character_rom[0..=0x1FFF];
     let tiles = pattern_bytes
         .chunks(16)
@@ -571,7 +602,19 @@ mod tests {
         };
 
         let mut buffer = vec![0; APP_WIDTH * HEIGHT];
-        draw_app_frame(&mut buffer, &pixels, &snapshot, ColorToggles::default());
+        let ppu_snapshot = PpuDebugSnapshot {
+            scanline: 241,
+            dot: 0,
+            frame: 2,
+            in_vblank: true,
+        };
+        draw_app_frame(
+            &mut buffer,
+            &pixels,
+            &snapshot,
+            &ppu_snapshot,
+            ColorToggles::default(),
+        );
 
         assert_eq!(APP_WIDTH, WIDTH + DEBUG_PANEL_WIDTH);
         assert_eq!(buffer[0], 0xAA5511);

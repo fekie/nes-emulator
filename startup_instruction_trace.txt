@@ -1,4 +1,4 @@
-Startup instruction trace: 1000 instructions captured in 0.164s
+Startup instruction trace: 1000 instructions captured in 0.047s
 #0001 PC=$8001 A=$00 X=$00 Y=$00 SP=$FD P=$04 CYC=2 OK=true Instruction { opcode: SEI, addressing_mode: Implied, low_byte: None, high_byte: None }
 #0002 PC=$8002 A=$00 X=$00 Y=$00 SP=$FD P=$04 CYC=4 OK=true Instruction { opcode: CLD, addressing_mode: Implied, low_byte: None, high_byte: None }
 #0003 PC=$8004 A=$10 X=$00 Y=$00 SP=$FD P=$04 CYC=6 OK=true Instruction { opcode: LDA, addressing_mode: Immediate, low_byte: Some(16), high_byte: None }

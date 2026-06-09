@@ -203,7 +203,7 @@ impl Mapper for CpuMemoryMapper {
                 let adjusted_address = 0x2000 + ((address - 0x2000) % 8);
 
                 match adjusted_address {
-                    PPUCTRL => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_ctrl(),
+                    PPUCTRL => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_ctrl(byte),
                     PPUMASK => self.ppu.as_ref().unwrap().borrow_mut().write_ppu_mask(),
                     OAMADDR => self.ppu.as_ref().unwrap().borrow_mut().write_oam_addr(),
                     OAMDATA => self.ppu.as_ref().unwrap().borrow_mut().write_oam_data(),
