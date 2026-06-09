@@ -182,13 +182,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
 
-                if let Err(err) = startup_instruction_trace.record(&debug_snapshot) {
-                    eprintln!(
-                        "Failed to save startup instruction trace to {}: {err}",
-                        startup_instruction_trace.path().display()
-                    );
-                }
-
                 available_cpu_cycles -= cpu_cycles_taken as i64;
 
                 let machine_cycles_taken = cpu_cycles_taken * CLOCK_DIVISOR as u8;
@@ -205,12 +198,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     current_machine_cycles = current_machine_cycles.wrapping_add(1);
                 }
 
+                let ppu_snapshot = ppu.borrow().debug_snapshot();
+                if let Err(err) = startup_instruction_trace.record(&debug_snapshot, &ppu_snapshot) {
+                    eprintln!(
+                        "Failed to save startup instruction trace to {}: {err}",
+                        startup_instruction_trace.path().display()
+                    );
+                }
+
                 // If we're out of cpu cycles, record how much we went over and then
                 // stop running cycles until the next request
                 if available_cpu_cycles <= 0 {
                     cpu_cycle_debt = available_cpu_cycles;
                     *thread_1_cpu_debug.lock().unwrap() = debug_snapshot.clone();
-                    *thread_1_ppu_debug.lock().unwrap() = ppu.borrow().debug_snapshot();
+                    *thread_1_ppu_debug.lock().unwrap() = ppu_snapshot;
                     break;
                 }
             }

@@ -54,6 +54,7 @@ pub struct CpuContainer(pub Cpu<CpuMemoryMapper, InterruptsContainer>);
 
 #[derive(Clone, Debug)]
 pub struct CpuDebugSnapshot {
+    pub instruction_address: u16,
     pub program_counter: u16,
     pub accumulator: u8,
     pub x: u8,
@@ -69,6 +70,7 @@ pub struct CpuDebugSnapshot {
 impl Default for CpuDebugSnapshot {
     fn default() -> Self {
         Self {
+            instruction_address: 0,
             program_counter: 0,
             accumulator: 0,
             x: 0,
@@ -113,8 +115,10 @@ impl CpuContainer {
     }
 
     pub fn cycle_debug(&mut self, debug_snapshot: &mut CpuDebugSnapshot) -> u8 {
+        let instruction_address = self.0.program_counter;
         let (cycles, success, instruction) = self.0.cycle_debug();
 
+        debug_snapshot.instruction_address = instruction_address;
         debug_snapshot.program_counter = self.0.program_counter;
         debug_snapshot.accumulator = self.0.accumulator;
         debug_snapshot.x = self.0.x;

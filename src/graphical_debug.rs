@@ -289,6 +289,7 @@ mod tests {
         );
 
         let snapshot = CpuDebugSnapshot {
+            instruction_address: 0xC000,
             program_counter: 0xC000,
             accumulator: 0x01,
             x: 0x02,
