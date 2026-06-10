@@ -1,4 +1,5 @@
-use crate::{cpu::CpuContainer, Pixels};
+use crate::cpu::CpuContainer;
+use crate::display::Pixels;
 use nes6502::Interrupts;
 use rgb::Rgb;
 use std::{cell::RefCell, rc::Rc};
@@ -269,7 +270,7 @@ impl Ppu {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Pixels;
+    use crate::display::Pixels;
 
     #[test]
     fn clock_writes_visible_pixels_by_dot_and_scanline() {

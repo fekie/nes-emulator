@@ -1,6 +1,6 @@
 use crate::cpu::CpuDebugSnapshot;
+use crate::display::{Pixels, HEIGHT, WIDTH};
 use crate::ppu::PpuDebugSnapshot;
-use crate::{Pixels, HEIGHT, WIDTH};
 use rgb::Rgb;
 
 pub const DEBUG_PANEL_WIDTH: usize = 168;
